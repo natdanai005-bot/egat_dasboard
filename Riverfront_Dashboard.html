@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard งานซ่อม Riverfront กฟผ. บางปะกง</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap');
+:root {
+  --navy:#003087;--navy-d:#001f5c;--navy-l:#0040a8;
+  --teal:#0e7490;--teal-l:#0891b2;--teal-bg:#ecfeff;
+  --gold:#FDB913;--blue:#0072CE;
+  --done:#10b981;--prog:#f59e0b;--alert:#ef4444;--pend:#6366f1;
+  --shadow:0 4px 24px rgba(0,48,135,.10);--shadow-h:0 10px 36px rgba(0,48,135,.20);
+  --border:#dde3f0;--gray:#f5f7fa;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Sarabun',sans-serif;background:#eaf0fb;color:#1a2744;min-height:100vh;overflow-x:hidden}
+
+/* ── TOPBAR ── */
+.topbar{background:linear-gradient(135deg,#001f5c,var(--teal) 60%,var(--teal-l));position:sticky;top:0;z-index:200;box-shadow:0 3px 20px rgba(0,0,0,.4)}
+.top-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;gap:12px;flex-wrap:wrap}
+.logo-row{display:flex;align-items:center;gap:14px}
+.egat-logo{width:50px;height:50px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:var(--teal);border:3px solid var(--gold);box-shadow:0 0 0 3px rgba(253,185,19,.25);flex-shrink:0;animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 0 3px rgba(253,185,19,.25)}50%{box-shadow:0 0 0 7px rgba(253,185,19,.08)}}
+.logo-text h1{font-size:17px;font-weight:800;color:#fff}
+.logo-text p{font-size:11px;color:rgba(255,255,255,.7)}
+.top-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:5px 12px;color:#fff;font-size:12px}
+.chip-gold{background:var(--gold);border-radius:8px;padding:5px 13px;color:#001f5c;font-size:12px;font-weight:700}
+.gold-line{height:3px;background:linear-gradient(90deg,transparent,var(--gold) 20%,var(--gold) 80%,transparent)}
+
+/* ── BACK LINK ── */
+.back-bar{background:#fff;border-bottom:2px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:10px}
+.back-btn{color:var(--teal);font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s}
+.back-btn:hover{color:var(--navy)}
+.breadcrumb{font-size:12px;color:#94a3b8}
+.breadcrumb span{color:var(--teal);font-weight:600}
+
+/* ── CONTAINER ── */
+.container{max-width:1440px;margin:0 auto;padding:24px 20px}
+
+/* ── HERO ── */
+.hero{border-radius:18px;overflow:hidden;box-shadow:var(--shadow-h);margin-bottom:24px;position:relative;height:320px}
+.hero img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,31,92,.85) 35%,rgba(14,116,144,.3) 75%,transparent)}
+.hero-content{position:absolute;top:0;left:0;bottom:0;padding:28px 36px;display:flex;flex-direction:column;justify-content:center;max-width:540px}
+.hero-tag{background:var(--gold);color:#001f5c;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px;letter-spacing:.5px}
+.hero-title{font-size:24px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:8px}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.8);line-height:1.6}
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.hbadge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 12px;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px}
+.kpi{background:#fff;border-radius:16px;padding:20px 18px;box-shadow:var(--shadow);border-top:4px solid transparent;position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s;cursor:default}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-h)}
+.kpi::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;opacity:.07}
+.kpi.t{border-color:var(--teal)}.kpi.t::before{background:var(--teal)}
+.kpi.g{border-color:var(--done)}.kpi.g::before{background:var(--done)}
+.kpi.a{border-color:var(--prog)}.kpi.a::before{background:var(--prog)}
+.kpi.r{border-color:var(--alert)}.kpi.r::before{background:var(--alert)}
+.kpi.p{border-color:var(--pend)}.kpi.p::before{background:var(--pend)}
+.kpi-icon{font-size:26px;margin-bottom:8px}
+.kpi-val{font-size:28px;font-weight:800;line-height:1;margin-bottom:4px}
+.kpi.t .kpi-val{color:var(--teal)}.kpi.g .kpi-val{color:var(--done)}
+.kpi.a .kpi-val{color:var(--prog)}.kpi.r .kpi-val{color:var(--alert)}
+.kpi.p .kpi-val{color:var(--pend)}
+.kpi-unit{font-size:13px;font-weight:400;color:#94a3b8;margin-left:2px}
+.kpi-label{font-size:11px;color:#64748b;font-weight:500;line-height:1.4}
+
+/* ── FILTER / CONTROL BAR ── */
+.filter-bar{background:#fff;border-radius:14px;padding:11px 16px;box-shadow:var(--shadow);margin-bottom:22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-label{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+.fbtn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:#475569;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'Sarabun',sans-serif}
+.fbtn:hover{border-color:var(--teal);color:var(--teal)}
+.fbtn.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.fbtn.g.active{background:var(--done);border-color:var(--done)}
+.fbtn.a.active{background:var(--prog);border-color:var(--prog)}
+.fbtn.r.active{background:var(--alert);border-color:var(--alert)}
+
+/* ── CHART ROW ── */
+.chart-row{display:grid;grid-template-columns:1fr 1.5fr;gap:18px;margin-bottom:24px}
+.chart-card{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.chart-card h3{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.chart-wrap{position:relative;height:200px}
+
+/* ── SECTION HEADING ── */
+.sec-head{display:flex;align-items:center;gap:12px;margin:24px 0 14px}
+.sec-head h2{font-size:15px;font-weight:800;color:var(--navy);white-space:nowrap}
+.sec-line{flex:1;height:2px;background:linear-gradient(90deg,var(--teal),transparent);border-radius:2px}
+
+/* ── CARD GRID ── */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.full{grid-column:1/-1}
+
+/* ── WORK CARD ── */
+.wcard{background:#fff;border-radius:16px;box-shadow:var(--shadow);overflow:hidden;transition:transform .25s,box-shadow .25s;opacity:0;transform:translateY(20px)}
+.wcard.visible{opacity:1;transform:translateY(0);transition:opacity .5s ease,transform .5s ease,box-shadow .25s}
+.wcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-h)}
+.wcard-head{padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background .2s}
+.wcard-head:hover{background:var(--gray)}
+.w-title-area{display:flex;align-items:flex-start;gap:10px;flex:1}
+.sec-num{background:var(--teal);color:#fff;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.wtitle{font-size:14px;font-weight:700;color:#1a2744;line-height:1.4}
+.wsub{font-size:11px;color:#64748b;margin-top:2px}
+.sbadge{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.sbadge::before{content:'●';font-size:7px}
+.s-done{background:#d1fae5;color:#065f46}.s-prog{background:#fef3c7;color:#92400e}
+.s-pend{background:#ede9fe;color:#4c1d95}.s-alert{background:#fee2e2;color:#991b1b}
+.s-plan{background:#dbeafe;color:#1e40af}
+.chev{color:#94a3b8;font-size:14px;transition:transform .3s;flex-shrink:0;margin-top:3px}
+.wcard.open .chev{transform:rotate(180deg)}
+
+/* ── CARD BODY ── */
+.wcard-body{display:none;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.wcard.open .wcard-body{display:block}
+
+/* ── PHOTO STRIP ── */
+.photo-strip{width:100%;overflow:hidden;border-bottom:1px solid var(--border);position:relative}
+.photo-strip img{width:100%;height:220px;object-fit:cover;display:block}
+.photo-strip.tall img{height:280px}
+.photo-strip.short img{height:160px}
+.photo-label{position:absolute;bottom:10px;right:12px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:3px 8px;border-radius:5px}
+.photo-duo{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)}
+.photo-duo img{width:100%;height:200px;object-fit:cover;display:block}
+.photo-duo .p-label{font-size:10px;background:rgba(0,0,0,.55);color:#fff;text-align:center;padding:4px}
+
+/* ── MINI STATS ── */
+.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.mini-grid.c4{grid-template-columns:repeat(4,1fr)}
+.mini-stat{text-align:center;background:var(--gray);border-radius:10px;padding:10px}
+.mini-val{font-size:20px;font-weight:800;color:var(--teal);line-height:1}
+.mini-lbl{font-size:11px;color:#64748b;margin-top:3px}
+
+/* ── TIMELINE ── */
+.timeline{padding:14px 16px;position:relative}
+.timeline::before{content:'';position:absolute;left:34px;top:18px;bottom:18px;width:2px;background:linear-gradient(to bottom,var(--teal),var(--border));border-radius:2px}
+.tl-item{display:flex;gap:14px;margin-bottom:14px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;position:relative;z-index:1;font-weight:700;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.13)}
+.td-done{background:var(--done);color:#fff}
+.td-prog{background:var(--prog);color:#fff;animation:tdPulse 2s infinite}
+.td-plan{background:var(--teal);color:#fff}
+.td-alert{background:var(--alert);color:#fff}
+@keyframes tdPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}60%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}
+.tl-content{flex:1;padding-top:4px}
+.tl-date{font-size:11px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase}
+.tl-text{font-size:13px;color:#334155;line-height:1.6}
+.tl-text strong{color:var(--navy);font-weight:700}
+
+/* ── INFO BOX ── */
+.ibox{margin:6px 16px 14px;padding:10px 14px;border-radius:10px;font-size:12.5px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.ibox-icon{font-size:18px;flex-shrink:0}
+.ibox.blue{background:#eff6ff;border-left:4px solid var(--blue);color:#1e40af}
+.ibox.teal{background:var(--teal-bg);border-left:4px solid var(--teal);color:#0e7490}
+.ibox.green{background:#f0fdf4;border-left:4px solid var(--done);color:#065f46}
+.ibox.amber{background:#fffbeb;border-left:4px solid var(--prog);color:#92400e}
+.ibox.red{background:#fef2f2;border-left:4px solid var(--alert);color:#991b1b}
+
+/* ── TABLE ── */
+.req-table{width:100%;border-collapse:collapse;font-size:13px}
+.req-table th{background:var(--teal);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:12px}
+.req-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:#334155;line-height:1.5}
+.req-table tr:last-child td{border-bottom:none}
+.req-table tr:hover td{background:var(--teal-bg)}
+.req-table tr:nth-child(even) td{background:#fafbff}
+.req-table tr:nth-child(even):hover td{background:var(--teal-bg)}
+.num-cell{text-align:right;font-weight:600;font-family:monospace}
+
+/* ── SPEC GRID ── */
+.spec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.spec-item{background:var(--gray);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.spec-label{font-size:11px;color:#64748b;font-weight:600}
+.spec-val{font-size:13px;font-weight:700;color:#1a2744}
+
+/* ── BUDGET BADGE ── */
+.budget-bar{background:linear-gradient(135deg,var(--teal),var(--navy));padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.budget-title{color:rgba(255,255,255,.8);font-size:12px}
+.budget-val{color:#fff;font-size:20px;font-weight:800}
+.budget-sub{color:var(--gold);font-size:11px}
+
+/* ── UPDATE PANEL ── */
+.upd-panel{border-top:1px solid var(--border);background:#fafbff}
+.upd-toggle{display:flex;align-items:center;gap:8px;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--navy);user-select:none;transition:background .2s}
+.upd-toggle:hover{background:var(--gray)}
+.utcount{background:var(--teal);color:#fff;border-radius:99px;font-size:10px;padding:1px 7px;margin-left:2px;min-width:18px;text-align:center;display:inline-block}
+.utcount:empty{display:none}
+.upd-body{display:none;padding:12px 16px 14px;border-top:1px solid var(--border)}
+.upd-body.open{display:block;animation:slideDown .25s ease}
+.upd-log{margin-bottom:12px}
+.upd-entry{display:flex;gap:10px;margin-bottom:10px;animation:slideDown .25s ease}
+.upd-entry-date{font-size:11px;color:#64748b;font-weight:600;margin-bottom:2px}
+.upd-entry-text{font-size:13px;color:#334155;line-height:1.5}
+.upd-form{background:white;border:1.5px solid var(--border);border-radius:10px;padding:12px}
+.upd-type-sel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.upd-type-btn{padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;opacity:.65}
+.upd-type-btn.active{opacity:1;font-weight:600}
+.upd-type-btn.sel-done.active{background:#d1fae5;border-color:var(--done);color:#065f46}
+.upd-type-btn.sel-prog.active{background:#fef3c7;border-color:var(--prog);color:#92400e}
+.upd-type-btn.sel-alert.active{background:#fee2e2;border-color:var(--alert);color:#991b1b}
+.upd-type-btn.sel-info.active{background:#dbeafe;border-color:var(--blue);color:#1e40af}
+.upd-textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Sarabun',sans-serif;font-size:13px;resize:vertical;min-height:64px;outline:none;transition:border-color .2s;color:#1a2744}
+.upd-textarea:focus{border-color:var(--teal)}
+.upd-submit{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+.upd-submit:hover{background:var(--navy)}
+.upd-del{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:12px;padding:2px 5px;transition:color .15s;flex-shrink:0;border-radius:4px}
+.upd-del:hover{color:var(--alert);background:#fee2e2}
+.ud-done{background:var(--done)}.ud-prog{background:var(--prog)}.ud-alert{background:var(--alert)}.ud-info{background:var(--blue)}
+
+/* ── FOOTER ── */
+.dash-footer{background:#fff;border-radius:14px;padding:16px 22px;box-shadow:var(--shadow);margin-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.legend{display:flex;align-items:center;gap:6px;font-size:12px}
+.ldot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.hidden{display:none!important}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.card-grid{grid-template-columns:1fr}.full{grid-column:1}.chart-row{grid-template-columns:1fr}}
+@media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.hero{height:220px}.hero-title{font-size:18px}}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;left:0;top:0;height:100vh;width:215px;background:linear-gradient(170deg,#001f5c,#003087 55%,#0a4472);z-index:300;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.3);overflow-y:auto}
+.sb-head{padding:16px 14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-logo{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#003087;border:2px solid #FDB913;flex-shrink:0}
+.sb-brand strong{display:block;font-size:12px;font-weight:800;color:#fff;line-height:1.3}
+.sb-brand span{font-size:10px;color:rgba(255,255,255,.55)}
+.sb-section{font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:12px 14px 5px}
+.sb-link{display:flex;align-items:center;gap:9px;padding:9px 12px;color:rgba(255,255,255,.72);text-decoration:none;font-size:13px;font-weight:500;border-radius:9px;margin:2px 8px;transition:all .18s;font-family:'Sarabun',sans-serif}
+.sb-link:hover{background:rgba(255,255,255,.12);color:#fff}
+.sb-link.active{background:rgba(14,116,144,.35);color:#67e8f9;font-weight:700;border-left:3px solid #0e7490;padding-left:9px}
+.sb-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sb-badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700}
+.sb-badge.red{background:rgba(239,68,68,.3);color:#fca5a5}
+.sb-badge.teal{background:rgba(14,116,144,.35);color:#67e8f9}
+.sb-divider{height:1px;background:rgba(255,255,255,.1);margin:5px 12px}
+.sb-footer{margin-top:auto;padding:12px 14px;font-size:10px;color:rgba(255,255,255,.32);line-height:1.7;border-top:1px solid rgba(255,255,255,.08)}
+.main-wrap{margin-left:215px}
+.sb-toggle{display:none;position:fixed;top:12px;left:12px;z-index:400;background:#001f5c;border:2px solid #FDB913;border-radius:8px;padding:6px 10px;color:#FDB913;font-size:16px;cursor:pointer;line-height:1}
+@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s}.sidebar.sb-open{transform:none}.main-wrap{margin-left:0}.sb-toggle{display:block}}
+</style>
+</head>
+<body>
+<button class="sb-toggle" onclick="document.querySelector('.sidebar').classList.toggle('sb-open')">☰</button>
+<div class="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo">กฟผ.</div>
+    <div class="sb-brand"><strong>กฟผ. บางปะกง</strong><span>Bangpakong Power Plant</span></div>
+  </div>
+  <a class="sb-link" href="index.html"><span class="sb-icon">🏠</span>ศูนย์ติดตามงาน (Hub)</a>
+  <div class="sb-divider"></div>
+  <div class="sb-section">โครงงาน</div>
+  <a class="sb-link" href="รายงานที่ดิน_กฟผ_Dashboard.html"><span class="sb-icon">🗂️</span>งานที่ดิน กฟผ.<span class="sb-badge red">2🚨</span></a>
+  <a class="sb-link active" href="Riverfront_Dashboard.html"><span class="sb-icon">⚓</span>ซ่อม Riverfront</a>
+  <div class="sb-footer">การไฟฟ้าฝ่ายผลิต<br>โรงไฟฟ้าบางปะกง</div>
+</div>
+<div class="main-wrap">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="top-inner">
+    <div class="logo-row">
+      <div class="egat-logo">กฟผ.</div>
+      <div class="logo-text">
+        <h1>งานซ่อมท่าเรือ Riverfront · โรงไฟฟ้าบางปะกง</h1>
+        <p>งานจ้างปรับปรุงโครงสร้าง Riverfront · แผนกงานบริเวณ กองโยธา อฟก.</p>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="chip">📅 คำนวณราคา 6 พ.ค. 2569</div>
+      <div class="chip-gold">🔨 ก่อสร้าง / ซ่อมแซม</div>
+    </div>
+  </div>
+  <div class="gold-line"></div>
+</div>
+
+<div class="container">
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <img src="riverfront/หน้า 2.png" alt="Riverfront Bangpakong">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-tag">โครงการปรับปรุงโครงสร้าง คสล.</span>
+    <div class="hero-title">งานซ่อม Riverfront<br>โรงไฟฟ้าบางปะกง</div>
+    <div class="hero-sub">โครงสร้างคอนกรีตเสริมเหล็กริมแม่น้ำบางปะกง กว้าง 25 ม. ยาว 430 ม. เสื่อมสภาพตามอายุการใช้งาน — ซ่อมแซมให้สามารถรับน้ำหนักและใช้งานได้อย่างปลอดภัย</div>
+    <div class="hero-badges">
+      <div class="hbadge">💰 34.61 ล้านบาท</div>
+      <div class="hbadge">📐 25 × 430 ม.</div>
+      <div class="hbadge">🔧 5 งานหลัก</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── KPI ── -->
+<div class="kpi-grid">
+  <div class="kpi t"><div class="kpi-icon">💰</div><div class="kpi-val">32.35<span class="kpi-unit">ล้าน</span></div><div class="kpi-label">ค่าก่อสร้าง (ไม่รวม VAT)</div></div>
+  <div class="kpi g"><div class="kpi-icon">📏</div><div class="kpi-val"><span data-target="430" class="cnt">0</span><span class="kpi-unit">ม.</span></div><div class="kpi-label">ความยาวโครงสร้าง Riverfront</div></div>
+  <div class="kpi a"><div class="kpi-icon">🏗️</div><div class="kpi-val"><span data-target="57" class="cnt">0</span><span class="kpi-unit">ต้น</span></div><div class="kpi-label">Main Beam ที่ซ่อมแซม</div></div>
+  <div class="kpi r"><div class="kpi-icon">🪨</div><div class="kpi-val"><span data-target="263" class="cnt">0</span><span class="kpi-unit">ต้น</span></div><div class="kpi-label">เสาเข็ม Composite Wrapping</div></div>
+  <div class="kpi p"><div class="kpi-icon">🛡️</div><div class="kpi-val"><span data-target="430" class="cnt">0</span><span class="kpi-unit">ม.</span></div><div class="kpi-label">ราวกันตกเปลี่ยนใหม่ทั้งหมด</div></div>
+</div>
+
+<!-- ── FILTER ── -->
+<div class="filter-bar">
+  <span class="filter-label">แสดง:</span>
+  <button class="fbtn active" onclick="filterCards('all',this)">ทั้งหมด</button>
+  <button class="fbtn g" onclick="filterCards('done',this)">✅ แล้วเสร็จ</button>
+  <button class="fbtn a" onclick="filterCards('progress',this)">⏳ กำลังดำเนินการ</button>
+  <button class="fbtn r" onclick="filterCards('plan',this)">📋 แผนงาน</button>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="fbtn" onclick="toggleAll(true)">▼ ขยายทั้งหมด</button>
+    <button class="fbtn" onclick="toggleAll(false)">▲ ย่อทั้งหมด</button>
+  </div>
+</div>
+
+<!-- ── CHARTS ── -->
+<div class="chart-row">
+  <div class="chart-card">
+    <h3>💰 สัดส่วนงบประมาณ (ล้านบาท)</h3>
+    <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <h3>📐 พื้นที่ซ่อมแซม (ตร.ม.) แยกตามประเภทงาน</h3>
+    <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ══ SECTION 1: ภาพรวมโครงการ ══ -->
+<div class="sec-head"><h2>📸 สภาพโครงสร้างและพื้นที่งาน</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- ภาพรวม aerial -->
+  <div class="wcard" data-status="done" id="c_site">
+    <div class="wcard-head" onclick="toggle('c_site')">
+      <div class="w-title-area">
+        <div class="sec-num">ผัง</div>
+        <div><div class="wtitle">ผังบริเวณแสดงพื้นที่งาน (Aerial View)</div><div class="wsub">ริมแม่น้ำบางปะกง · พิกัด 13.4964°N, 101.0208°E</div></div>
+      </div>
+      <span class="sbadge s-plan">ข้อมูลพื้นที่</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-strip tall">
+        <img src="riverfront/หน้า 1.png" alt="Aerial view Riverfront">
+        <span class="photo-label">📍 Aerial · แม่น้ำบางปะกง</span>
+      </div>
+      <div class="spec-grid">
+        <div class="spec-item"><span class="spec-label">ขนาดโครงสร้าง</span><span class="spec-val">กว้าง 25 ม. × ยาว 430 ม.</span></div>
+        <div class="spec-item"><span class="spec-label">ประเภทโครงสร้าง</span><span class="spec-val">คอนกรีตเสริมเหล็ก (คสล.)</span></div>
+        <div class="spec-item"><span class="spec-label">ที่ตั้ง</span><span class="spec-val">ต.ท่าข้าม อ.บางปะกง จ.ฉะเชิงเทรา</span></div>
+        <div class="spec-item"><span class="spec-label">พื้นที่ทำงาน</span><span class="spec-val">ประมาณ 20 × 334 ม.</span></div>
+      </div>
+      <div class="ibox teal"><div class="ibox-icon">ℹ️</div><div>โครงสร้างเป็นพื้นที่ปิดอยู่ติดริมแม่น้ำ แบ่งเป็น <strong>Line A, B, B1, C</strong> — ด้านล่างพื้นเป็นพื้นที่อับอากาศ ต้องจัดหาอุปกรณ์ระบายอากาศก่อนทำงาน</div></div>
+    </div>
+  </div>
+
+  <!-- สภาพใต้พื้น -->
+  <div class="wcard" data-status="done" id="c_under">
+    <div class="wcard-head" onclick="toggle('c_under')">
+      <div class="w-title-area">
+        <div class="sec-num">สภาพ</div>
+        <div><div class="wtitle">สภาพโครงสร้างใต้ท้องพื้น</div><div class="wsub">Line B, B1, C — พบตะกอนดินสะสม + คอนกรีตเสียหาย</div></div>
+      </div>
+      <span class="sbadge s-alert">พบความเสียหาย</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-strip tall">
+        <img src="riverfront/หน้า 3_1.png" alt="Under deck condition">
+        <span class="photo-label">📷 สภาพใต้ท้องพื้น Line B, B1, C</span>
+      </div>
+      <div class="ibox red"><div class="ibox-icon">⚠️</div><div><strong>พบตะกอนดินสะสม</strong> ใน Line A และ B ประมาณ 2/3 ของความยาว — ตะกอนอยู่ห่างจากท้องคาน 0.50–0.70 ม. ลักษณะเหนียวนิ่ม ต้องขุดลอกออก</div></div>
+      <div class="ibox amber"><div class="ibox-icon">🔨</div><div>คอนกรีตเสาเข็ม, คาน, พื้น <strong>แตกกระเทาะ หลุดร่อน เหล็กเสริมเป็นสนิม</strong> — ลดความสามารถรับน้ำหนักของโครงสร้าง</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SECTION 2: งานปรับปรุงโครงสร้างพื้น ══ -->
+<div class="sec-head"><h2>🏗️ งานปรับปรุงโครงสร้างพื้น</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- งานเปิดพื้น -->
+  <div class="wcard full" data-status="plan" id="c_floor">
+    <div class="wcard-head" onclick="toggle('c_floor')">
+      <div class="w-title-area">
+        <div class="sec-num">งาน 1</div>
+        <div><div class="wtitle">งานเปิดแผ่นพื้น Line B / C เพื่อซ่อมแซมโครงสร้างด้านล่าง</div><div class="wsub">สกัดคอนกรีตทับหน้า + ยก Pre-Cast Slab + เทคอนกรีต Marine Concrete ทดแทน</div></div>
+      </div>
+      <span class="sbadge s-plan">แผนงาน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-duo">
+        <div>
+          <img src="riverfront/หน้า 3_1.png" alt="Under deck">
+          <div class="p-label">สภาพใต้ท้องพื้น (ก่อนซ่อม)</div>
+        </div>
+        <div>
+          <img src="riverfront/หน้า 2.png" alt="Riverfront ground view">
+          <div class="p-label">มุมมองพื้นที่งาน (ด้านบน)</div>
+        </div>
+      </div>
+      <div class="mini-grid c4">
+        <div class="mini-stat"><div class="mini-val">312</div><div class="mini-lbl">ม. (Line B สกัด)</div></div>
+        <div class="mini-stat"><div class="mini-val">5</div><div class="mini-lbl">ช่องเปิด Line C</div></div>
+        <div class="mini-stat"><div class="mini-val">1,200</div><div class="mini-lbl">ตร.ม. คอนกรีตซ่อม</div></div>
+        <div class="mini-stat"><div class="mini-val">5 ตัน</div><div class="mini-lbl">น้ำหนักแผ่นพื้นต่อแผ่น</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-plan">1</div><div class="tl-content"><div class="tl-date">Line C · 5 ช่อง</div><div class="tl-text">สกัดคอนกรีตทับหน้า ขนาด <strong>3.50 × 6.50 ม.</strong> พร้อมยก Pre-Cast Slab ออก → หล่อพื้น คสล. ช่องเปิดถาวร <strong>1.00 × 1.50 ม.</strong> พร้อมฝาตะแกรง Grating Hot Dip Galvanized</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-plan">2</div><div class="tl-content"><div class="tl-date">Line B · ตลอดความยาว</div><div class="tl-text">สกัดคอนกรีตทับหน้า <strong>3.50 × 312 ม.</strong> ยก Pre-Cast Slab ออกทั้งหมด เพื่อเพิ่มพื้นที่ทำงานและการระบายอากาศ → นำกลับติดตั้งตำแหน่งเดิม + เทคอนกรีต Marine Concrete ทับหน้า</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-plan">3</div><div class="tl-content"><div class="tl-date">งานขุดลอกตะกอนดิน</div><div class="tl-text">ขุดลอกตะกอนดินสะสม (เหนียวนิ่ม) บริเวณ Line A และ B ประมาณ <strong>6,084 ลบ.ม.</strong> ขนย้ายไปยัง Line C ที่ต่ำกว่า</div></div></div>
+      </div>
+      <div class="ibox amber"><div class="ibox-icon">⚠️</div><div>แผ่น Pre-Cast Slab มีน้ำหนักประมาณ <strong>5 ตัน/แผ่น</strong> — ต้องยกด้วยรถบรรทุกติดเครน โดยระมัดระวังอย่าให้ชำรุด เนื่องจากต้องนำกลับติดตั้งเดิม (ยกเว้น Line C)</div></div>
+    </div>
+  </div>
+
+  <!-- Main Beam -->
+  <div class="wcard" data-status="plan" id="c_mainbeam">
+    <div class="wcard-head" onclick="toggle('c_mainbeam')">
+      <div class="w-title-area">
+        <div class="sec-num">งาน 2</div>
+        <div><div class="wtitle">งานซ่อมแซมคาน Main Beam</div><div class="wsub">57 ต้น · พื้นที่รวม 1,988 ตร.ม. · เคลือบ Pure Polyurea</div></div>
+      </div>
+      <span class="sbadge s-plan">แผนงาน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-strip">
+        <img src="riverfront/หน้า 5.png" alt="Main Beam damage">
+        <span class="photo-label">📷 สภาพความเสียหาย Main Beam</span>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-stat"><div class="mini-val">57</div><div class="mini-lbl">ต้น Main Beam</div></div>
+        <div class="mini-stat"><div class="mini-val">13 ม.</div><div class="mini-lbl">ความยาว/ต้น</div></div>
+        <div class="mini-stat"><div class="mini-val">1,988</div><div class="mini-lbl">ตร.ม. พื้นที่ซ่อม</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-alert">!</div><div class="tl-content"><div class="tl-date">สภาพที่พบ</div><div class="tl-text">คอนกรีตถูกกัดกร่อน <strong>แตกร้าว กะเทาะ หลุดล่อน</strong> บางส่วน รวมถึงเหล็กเสริมเกิดสนิม</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-plan">→</div><div class="tl-content"><div class="tl-date">วิธีซ่อมแซม</div><div class="tl-text">สกัดหน้าลายผิวคาน → เทคอนกรีต<strong>ขยายหน้าตัดออกไปข้างละ 0.10 ม.</strong>ตลอดความยาวคาน → พ่นเคลือบผิวด้วย <strong>Pure Polyurea</strong></div></div></div>
+      </div>
+      <div class="ibox teal"><div class="ibox-icon">🔧</div><div>แบ่ง Main Beam ตามประเภท Type I–IV (กว้าง 1.00–1.20 ม. × ลึก 0.55 ม.) รวม 76 ต้น — <strong>57 ต้น</strong> มีความเสียหายที่ต้องซ่อม</div></div>
+    </div>
+  </div>
+
+  <!-- Cross Beam -->
+  <div class="wcard" data-status="plan" id="c_crossbeam">
+    <div class="wcard-head" onclick="toggle('c_crossbeam')">
+      <div class="w-title-area">
+        <div class="sec-num">งาน 3</div>
+        <div><div class="wtitle">งานซ่อมแซมคาน Cross Beam</div><div class="wsub">ยาว 312 ม. · พื้นที่รวม 843 ตร.ม. · เคลือบ Pure Polyurea</div></div>
+      </div>
+      <span class="sbadge s-plan">แผนงาน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-strip">
+        <img src="riverfront/หน้า 7.png" alt="Cross Beam damage">
+        <span class="photo-label">📷 สภาพความเสียหาย Cross Beam</span>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-stat"><div class="mini-val">312</div><div class="mini-lbl">ม. ความยาวรวม</div></div>
+        <div class="mini-stat"><div class="mini-val">843</div><div class="mini-lbl">ตร.ม. พื้นที่ซ่อม</div></div>
+        <div class="mini-stat"><div class="mini-val">+0.10</div><div class="mini-lbl">ม. ขยายหน้าตัด/ข้าง</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-alert">!</div><div class="tl-content"><div class="tl-date">สภาพที่พบ</div><div class="tl-text">คอนกรีตถูกกัดกร่อน <strong>แตกร้าว กะเทาะ</strong> บางส่วน — ลักษณะเดียวกับ Main Beam</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-plan">→</div><div class="tl-content"><div class="tl-date">วิธีซ่อมแซม</div><div class="tl-text">สกัดหน้าลาย → เทคอนกรีต<strong>ขยายหน้าตัด ±0.10 ม.</strong> → พ่นเคลือบ <strong>Pure Polyurea</strong> ทั้งพื้นที่ 843 ตร.ม.</div></div></div>
+      </div>
+      <div class="ibox teal"><div class="ibox-icon">📊</div><div>Cross Beam ขนาด 1.20 × 0.55 ม. แบ่งเป็น Type XIII–XV มีความเสียหายประมาณ <strong>1,379 ตร.ม.</strong> (รวม Main Beam = 3,467 ตร.ม.)</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SECTION 3: งานเสาเข็ม ══ -->
+<div class="sec-head"><h2>🪨 งานซ่อมแซมเสาเข็ม</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- เสาเข็มขยายหน้าตัด -->
+  <div class="wcard" data-status="plan" id="c_pile">
+    <div class="wcard-head" onclick="toggle('c_pile')">
+      <div class="w-title-area">
+        <div class="sec-num">งาน 4</div>
+        <div><div class="wtitle">งานซ่อมเสาเข็ม — ขยายหน้าตัด 10 ต้น</div><div class="wsub">0.40×0.40 ม. → 0.60×0.60 ม. ยาว 2.00 ม. + Composite Wrapping</div></div>
+      </div>
+      <span class="sbadge s-plan">แผนงาน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-duo">
+        <div>
+          <img src="riverfront/หน้า 9.png" alt="Pile layout drawing">
+          <div class="p-label">ผังแสดงตำแหน่งเสาเข็ม (Engineering Drawing)</div>
+        </div>
+        <div>
+          <img src="riverfront/หน้า 10.png" alt="Pile damage">
+          <div class="p-label">สภาพความเสียหายเสาเข็ม</div>
+        </div>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-stat"><div class="mini-val">10</div><div class="mini-lbl">ต้น ขยายหน้าตัด</div></div>
+        <div class="mini-stat"><div class="mini-val">0.60×0.60</div><div class="mini-lbl">ม. หน้าตัดใหม่</div></div>
+        <div class="mini-stat"><div class="mini-val">2.00</div><div class="mini-lbl">ม. ความยาวซ่อม/ต้น</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-alert">!</div><div class="tl-content"><div class="tl-date">สภาพที่พบ</div><div class="tl-text">คอนกรีตถูกกัดกร่อน <strong>แตกร้าว กะเทาะ หลุดล่อน</strong> จำนวน <strong>10 ต้น</strong></div></div></div>
+        <div class="tl-item"><div class="tl-dot td-plan">→</div><div class="tl-content"><div class="tl-date">วิธีซ่อมแซม</div><div class="tl-text">สกัดคอนกรีตเสียหาย → ทาน้ำยายับยั้งสนิม → เสริมเหล็กชุบกัลวาไนซ์ → เทคอนกรีต <strong>SCC (Self Compacting Concrete)</strong> ขยายหน้าตัดจาก 0.40→0.60 ม. ยาว 2.00 ม.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Composite Wrapping -->
+  <div class="wcard" data-status="plan" id="c_wrap">
+    <div class="wcard-head" onclick="toggle('c_wrap')">
+      <div class="w-title-area">
+        <div class="sec-num">งาน 5</div>
+        <div><div class="wtitle">งาน Composite Wrapping เสาเข็ม 263 ต้น</div><div class="wsub">พื้นที่ 538 ตร.ม. · Wrapping ยาว 1.25 ม./ต้น</div></div>
+      </div>
+      <span class="sbadge s-plan">แผนงาน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-strip">
+        <img src="riverfront/หน้า 12.png" alt="Wrapping work">
+        <span class="photo-label">📷 สภาพโครงสร้างก่อน Wrapping</span>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-stat"><div class="mini-val">263</div><div class="mini-lbl">ต้น Wrapping</div></div>
+        <div class="mini-stat"><div class="mini-val">1.25</div><div class="mini-lbl">ม. ยาว/ต้น</div></div>
+        <div class="mini-stat"><div class="mini-val">538</div><div class="mini-lbl">ตร.ม. พื้นที่รวม</div></div>
+      </div>
+      <div class="ibox teal"><div class="ibox-icon">🔒</div><div>ใช้วัสดุ <strong>Composite Wrapping</strong> หุ้มเสาเข็มที่ไม่รุนแรงพอจะขยายหน้าตัด — ป้องกันการกัดกร่อนจากน้ำแม่น้ำและความชื้นระยะยาว</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SECTION 4: งานราวกันตก + ค่าใช้จ่ายพิเศษ ══ -->
+<div class="sec-head"><h2>🛡️ งานราวกันตกและค่าใช้จ่ายพิเศษ</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- ราวกันตก -->
+  <div class="wcard" data-status="plan" id="c_rail">
+    <div class="wcard-head" onclick="toggle('c_rail')">
+      <div class="w-title-area">
+        <div class="sec-num">งาน 6</div>
+        <div><div class="wtitle">งานเปลี่ยนราวกันตกใหม่ทั้งหมด 430 ม.</div><div class="wsub">รื้อของเดิม + ติดตั้ง Hot Dip Galvanized ใหม่ + คันทาง คสล.</div></div>
+      </div>
+      <span class="sbadge s-plan">แผนงาน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="photo-strip">
+        <img src="riverfront/หน้า 13.png" alt="Guardrail">
+        <span class="photo-label">📷 สภาพราวกันตกปัจจุบัน (ก่อนรื้อ)</span>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-stat"><div class="mini-val">430</div><div class="mini-lbl">ม. ราวกันตก</div></div>
+        <div class="mini-stat"><div class="mini-val">รื้อ 100%</div><div class="mini-lbl">ของเดิมออกทั้งหมด</div></div>
+        <div class="mini-stat"><div class="mini-val">HDG</div><div class="mini-lbl">Hot Dip Galvanized</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-alert">!</div><div class="tl-content"><div class="tl-date">สภาพที่พบ</div><div class="tl-text">ขอบคันทาง คสล. (Curb) และราวกันตกเหล็กของเดิม <strong>แตกร้าว กะเทาะ และราวกันตกเป็นสนิม ผุกร่อน</strong></div></div></div>
+        <div class="tl-item"><div class="tl-dot td-plan">→</div><div class="tl-content"><div class="tl-date">วิธีดำเนินการ</div><div class="tl-text">รื้อของเดิมออกทั้งหมด → ติดตั้งราวกันตกเหล็ก <strong>Hot Dip Galvanized</strong> พร้อมขอบคันทาง คสล. (Curb) ใหม่ตลอด 430 ม.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ค่าใช้จ่ายพิเศษ -->
+  <div class="wcard" data-status="done" id="c_special">
+    <div class="wcard-head" onclick="toggle('c_special')">
+      <div class="w-title-area">
+        <div class="sec-num">งบฯ</div>
+        <div><div class="wtitle">ค่าใช้จ่ายพิเศษและงบประมาณโครงการ</div><div class="wsub">ราคากลาง 34,614,000 บาท (รวม VAT 7%) · คำนวณ 6 พ.ค. 2569</div></div>
+      </div>
+      <span class="sbadge s-done">คำนวณแล้ว</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="budget-bar">
+        <div><div class="budget-title">ราคากลาง (รวม VAT 7%)</div><div class="budget-val">34,614,000 บาท</div></div>
+        <div style="text-align:right"><div class="budget-title">วงเงินงบประมาณ</div><div class="budget-val">35,352,000 บาท</div><div class="budget-sub">ส่วนต่างจากเป้าหมาย 738,000 บาท</div></div>
+      </div>
+      <div style="padding:12px 16px">
+        <table class="req-table">
+          <thead><tr><th>รายการ</th><th style="width:140px;text-align:right">จำนวนเงิน (บาท)</th></tr></thead>
+          <tbody>
+            <tr><td>งานก่อสร้างหลัก (ไม่รวม VAT)</td><td class="num-cell">29,131,283</td></tr>
+            <tr><td>อุปกรณ์ระบายอากาศ (พื้นที่อับอากาศ)</td><td class="num-cell">176,926</td></tr>
+            <tr><td>นั่งร้านทางเดินชั่วคราว + ค้ำยัน</td><td class="num-cell">2,635,750</td></tr>
+            <tr><td>ค่าพาหนะไป-กลับ + ที่พักพนักงาน</td><td class="num-cell">116,280</td></tr>
+            <tr><td>รั้วชั่วคราว Metal Sheet สูง 2 ม. (374 ม.)</td><td class="num-cell">370,656</td></tr>
+            <tr><td>ค่าเช่ารถบรรทุกติดเครน</td><td class="num-cell">144,826</td></tr>
+            <tr style="font-weight:700;background:#f0fdf4"><td>รวมก่อน VAT 7%</td><td class="num-cell" style="color:var(--done)">32,350,385</td></tr>
+            <tr style="font-weight:700;background:#ecfeff"><td>VAT 7%</td><td class="num-cell" style="color:var(--teal)">2,264,527</td></tr>
+            <tr style="font-weight:800;background:linear-gradient(90deg,#f0f9ff,#ecfeff)"><td style="color:var(--navy)">ราคากลางสุทธิ (รวม VAT)</td><td class="num-cell" style="color:var(--teal);font-size:15px">34,614,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ibox blue"><div class="ibox-icon">📋</div><div>สัญญาแบบ <strong>ปรับราคาได้ (ค่า K)</strong> หมวดงานอาคาร · ผู้ออกแบบ: ฝ่ายบำรุงรักษาโยธา (อบย.) · ผู้ประมาณราคา: นายณัฎฐพล ชูเชิด วศ.4 หบฟ2-ธ.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="dash-footer">
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div class="legend"><div class="ldot" style="background:var(--done)"></div>แล้วเสร็จ</div>
+    <div class="legend"><div class="ldot" style="background:var(--prog)"></div>กำลังดำเนินการ</div>
+    <div class="legend"><div class="ldot" style="background:var(--teal)"></div>แผนงาน / เตรียมดำเนินการ</div>
+    <div class="legend"><div class="ldot" style="background:var(--alert)"></div>พบความเสียหาย</div>
+  </div>
+  <div style="font-size:11px;color:#94a3b8">กฟผ. โรงไฟฟ้าบางปะกง · บย.03-ข1-003 · คำนวณราคา 6 พ.ค. 2569</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ── COUNTER ──
+document.querySelectorAll('.cnt[data-target]').forEach(el => {
+  const target = +el.dataset.target;
+  const dur = 1400;
+  const start = performance.now();
+  const tick = now => {
+    const p = Math.min((now - start)/dur, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(ease * target).toLocaleString();
+    if(p < 1) requestAnimationFrame(tick);
+  };
+  setTimeout(() => requestAnimationFrame(tick), 300);
+});
+
+// ── SCROLL REVEAL ──
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, { threshold: 0.07 });
+document.querySelectorAll('.wcard').forEach((c,i) => {
+  c.style.transitionDelay = (i%4)*0.07 + 's';
+  obs.observe(c);
+});
+
+// ── TOGGLE ──
+function toggle(id){ document.getElementById(id).classList.toggle('open'); }
+function toggleAll(open){ document.querySelectorAll('.wcard:not(.hidden)').forEach(c => open?c.classList.add('open'):c.classList.remove('open')); }
+
+// ── FILTER ──
+function filterCards(status, btn) {
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.wcard').forEach(c => {
+    const s = c.dataset.status;
+    const show = status==='all' || s===status || (status==='plan' && s==='plan');
+    show ? c.classList.remove('hidden') : (c.classList.add('hidden'), c.classList.remove('open'));
+  });
+}
+
+// ── DONUT CHART: Budget breakdown ──
+new Chart(document.getElementById('donutChart'), {
+  type:'doughnut',
+  data:{
+    labels:['งานก่อสร้างหลัก','ค่าใช้จ่ายพิเศษ','VAT 7%'],
+    datasets:[{
+      data:[29.13, 3.44, 2.26],
+      backgroundColor:['#0e7490','#f59e0b','#94a3b8'],
+      borderWidth:3, borderColor:'#fff', hoverOffset:10
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'65%',
+    plugins:{
+      legend:{ position:'right', labels:{ font:{ family:'Sarabun', size:12 }, padding:14 }},
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.parsed.toFixed(2)} ล้านบาท` }}
+    },
+    animation:{ animateRotate:true, duration:1400 }
+  }
+});
+
+// ── BAR CHART: Work areas ──
+new Chart(document.getElementById('barChart'), {
+  type:'bar',
+  data:{
+    labels:['Main Beam','Cross Beam','Fender Wall\n(Polyurea)','Wrapping\nเสาเข็ม','พื้นทับหน้า\n(คอนกรีตใหม่)'],
+    datasets:[{
+      label:'พื้นที่ (ตร.ม.)',
+      data:[1988, 843, 375, 538, 1200],
+      backgroundColor:['#0e7490','#0891b2','#22d3ee','#f59e0b','#10b981'],
+      borderRadius:6, borderSkipped:false
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.parsed.y.toLocaleString()} ตร.ม.` }}
+    },
+    scales:{
+      x:{ grid:{ display:false }, ticks:{ font:{ family:'Sarabun', size:11 }}},
+      y:{ grid:{ color:'#f1f5f9' }, ticks:{ font:{ family:'Sarabun', size:11 }}}
+    },
+    animation:{ duration:1600, easing:'easeOutQuart' }
+  }
+});
+
+// ══════════════════════════════════════════
+// ── UPDATE PANEL (localStorage) ──
+// ══════════════════════════════════════════
+const UPD_KEY = 'egat_river_upd_v1';
+function loadUpd(){ try{ return JSON.parse(localStorage.getItem(UPD_KEY))||{}; }catch{ return {}; } }
+function saveUpd(d){ localStorage.setItem(UPD_KEY, JSON.stringify(d)); }
+const TC = {
+  done:{cls:'ud-done',icon:'✓'}, prog:{cls:'ud-prog',icon:'⏳'},
+  alert:{cls:'ud-alert',icon:'!'}, info:{cls:'ud-info',icon:'ℹ'},
+};
+function thDate(iso){
+  const d=new Date(iso);
+  const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} น.`;
+}
+function renderUpd(id){
+  const d=loadUpd(); const list=d[id]||[];
+  const log=document.querySelector(`#${id} .upd-log`);
+  const cnt=document.querySelector(`#${id} .utcount`);
+  if(!log) return;
+  log.innerHTML=list.length===0
+    ?'<div style="color:#94a3b8;font-size:12px;text-align:center;padding:8px 0">— ยังไม่มีการอัปเดต —</div>'
+    :list.map((e,i)=>{
+        const t=TC[e.type]||TC.info;
+        const safe=e.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<div class="upd-entry">
+          <div class="tl-dot ${t.cls}" style="width:26px;height:26px;font-size:11px;flex-shrink:0;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.12)">${t.icon}</div>
+          <div style="flex:1"><div class="upd-entry-date">${thDate(e.ts)}</div><div class="upd-entry-text">${safe}</div></div>
+          <button class="upd-del" onclick="delUpd('${id}',${i})" title="ลบ">✕</button>
+        </div>`;
+      }).join('');
+  if(cnt) cnt.textContent = list.length>0 ? list.length : '';
+}
+function delUpd(id,i){ if(!confirm('ลบรายการนี้?')) return; const d=loadUpd(); if(!d[id]) return; d[id].splice(i,1); saveUpd(d); renderUpd(id); }
+function submitUpd(id){
+  const ta=document.getElementById(`upta-${id}`);
+  const ab=document.querySelector(`#upf-${id} .upd-type-btn.active`);
+  const txt=ta.value.trim();
+  if(!txt){ ta.focus(); ta.style.borderColor='var(--alert)'; setTimeout(()=>ta.style.borderColor='',1200); return; }
+  const d=loadUpd(); if(!d[id]) d[id]=[];
+  d[id].unshift({ts:new Date().toISOString(), text:txt, type:ab?ab.dataset.type:'info'});
+  saveUpd(d); ta.value=''; renderUpd(id);
+  const btn=document.querySelector(`#upf-${id} .upd-submit`);
+  const orig=btn.textContent; btn.textContent='✅ บันทึกแล้ว!'; btn.style.background='var(--done)';
+  setTimeout(()=>{ btn.textContent=orig; btn.style.background=''; }, 1500);
+}
+function toggleUpd(id){ document.getElementById(`upb-${id}`).classList.toggle('open'); }
+function selType(id,btn){ document.querySelectorAll(`#upf-${id} .upd-type-btn`).forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+
+document.querySelectorAll('.wcard').forEach(card => {
+  const id=card.id; if(!id) return;
+  const body=card.querySelector('.wcard-body'); if(!body) return;
+  const p=document.createElement('div');
+  p.className='upd-panel';
+  p.innerHTML=`
+    <div class="upd-toggle" onclick="toggleUpd('${id}')">
+      📝 บันทึกอัปเดต <span class="utcount"></span>
+      <span style="margin-left:auto;font-size:11px;color:#94a3b8">▾</span>
+    </div>
+    <div class="upd-body" id="upb-${id}">
+      <div class="upd-log"></div>
+      <div class="upd-form" id="upf-${id}">
+        <div class="upd-type-sel">
+          <button class="upd-type-btn sel-done active" data-type="done" onclick="selType('${id}',this)">✓ เสร็จแล้ว</button>
+          <button class="upd-type-btn sel-prog" data-type="prog" onclick="selType('${id}',this)">⏳ กำลังทำ</button>
+          <button class="upd-type-btn sel-alert" data-type="alert" onclick="selType('${id}',this)">🚨 ด่วน</button>
+          <button class="upd-type-btn sel-info" data-type="info" onclick="selType('${id}',this)">ℹ️ ข้อมูล</button>
+        </div>
+        <textarea class="upd-textarea" id="upta-${id}" placeholder="พิมพ์ข้อมูลอัปเดต เช่น เริ่มงานวันนี้ ผู้รับเหมาเข้าพื้นที่แล้ว..." rows="3"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <span style="font-size:11px;color:#94a3b8">🔒 บันทึกไว้บนเครื่องนี้</span>
+          <button class="upd-submit" onclick="submitUpd('${id}')">💾 บันทึกอัปเดต</button>
+        </div>
+      </div>
+    </div>`;
+  body.appendChild(p);
+  renderUpd(id);
+});
+</script>
+</div><!-- /main-wrap -->
+</body>
+</html>

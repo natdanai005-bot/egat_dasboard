@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard งานที่ดิน กฟผ. โรงไฟฟ้าบางปะกง</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --egat-navy: #003087; --egat-navy-dark: #001f5c; --egat-navy-light: #0040a8;
+  --egat-red: #C8102E; --egat-gold: #FDB913; --egat-blue: #0072CE;
+  --egat-light-blue: #e8f4fd; --egat-gray: #f5f7fa; --egat-border: #dde3f0;
+  --done: #10b981; --progress: #f59e0b; --alert: #ef4444; --pending: #6366f1;
+  --shadow: 0 4px 24px rgba(0,48,135,0.10); --shadow-h: 0 10px 36px rgba(0,48,135,0.20);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Sarabun',sans-serif;background:#eaf0fb;color:#1a2744;min-height:100vh;overflow-x:hidden}
+
+/* ── TOPBAR ── */
+.topbar{background:linear-gradient(135deg,#001f5c,#003087 50%,#0040a8);position:sticky;top:0;z-index:200;box-shadow:0 3px 20px rgba(0,0,0,0.4)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;gap:12px;flex-wrap:wrap}
+.logo-area{display:flex;align-items:center;gap:14px}
+.egat-logo{width:50px;height:50px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#003087;border:3px solid #FDB913;box-shadow:0 0 0 3px rgba(253,185,19,.25);flex-shrink:0;animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 0 3px rgba(253,185,19,.25)}50%{box-shadow:0 0 0 7px rgba(253,185,19,.1)}}
+.logo-text h1{font-size:17px;font-weight:800;color:#fff}
+.logo-text p{font-size:11px;color:rgba(255,255,255,.7)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.date-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:5px 12px;color:#fff;font-size:12px}
+.mtg-badge{background:#FDB913;border-radius:8px;padding:5px 12px;color:#001f5c;font-size:12px;font-weight:700}
+.gold-line{height:3px;background:linear-gradient(90deg,transparent,#FDB913 20%,#FDB913 80%,transparent)}
+
+/* ── CONTAINER ── */
+.container{max-width:1440px;margin:0 auto;padding:24px 20px}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px}
+.kpi{background:#fff;border-radius:16px;padding:22px 18px;box-shadow:var(--shadow);border-top:4px solid transparent;position:relative;overflow:hidden;cursor:default;transition:transform .25s,box-shadow .25s}
+.kpi:hover{transform:translateY(-4px);box-shadow:var(--shadow-h)}
+.kpi::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;opacity:.07}
+.kpi.blue{border-color:var(--egat-blue)} .kpi.blue::before{background:var(--egat-blue)}
+.kpi.green{border-color:var(--done)}    .kpi.green::before{background:var(--done)}
+.kpi.amber{border-color:var(--progress)}.kpi.amber::before{background:var(--progress)}
+.kpi.red{border-color:var(--alert)}     .kpi.red::before{background:var(--alert)}
+.kpi.purple{border-color:var(--pending)}.kpi.purple::before{background:var(--pending)}
+.kpi-icon{font-size:28px;margin-bottom:10px}
+.kpi-val{font-size:40px;font-weight:800;line-height:1;margin-bottom:4px;transition:color .3s}
+.kpi.blue .kpi-val{color:var(--egat-blue)}.kpi.green .kpi-val{color:var(--done)}
+.kpi.amber .kpi-val{color:var(--progress)}.kpi.red .kpi-val{color:var(--alert)}
+.kpi.purple .kpi-val{color:var(--pending)}
+.kpi-label{font-size:12px;color:#64748b;font-weight:500;line-height:1.4}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:#fff;border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);margin-bottom:22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-label{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+.fbtn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--egat-border);background:#fff;color:#475569;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'Sarabun',sans-serif}
+.fbtn:hover{border-color:var(--egat-blue);color:var(--egat-blue)}
+.fbtn.active{background:var(--egat-navy);border-color:var(--egat-navy);color:#fff}
+.fbtn.g.active{background:var(--done);border-color:var(--done)}
+.fbtn.a.active{background:var(--progress);border-color:var(--progress)}
+.fbtn.r.active{background:var(--alert);border-color:var(--alert)}
+
+/* ── CHART ROW ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+.chart-card{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.chart-card h3{font-size:14px;font-weight:700;color:var(--egat-navy);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.chart-wrap{position:relative;height:200px}
+
+/* ── SECTION HEADING ── */
+.sec-head{display:flex;align-items:center;gap:12px;margin:24px 0 14px}
+.sec-head h2{font-size:15px;font-weight:800;color:var(--egat-navy);white-space:nowrap}
+.sec-line{flex:1;height:2px;background:linear-gradient(90deg,var(--egat-navy),transparent);border-radius:2px}
+
+/* ── CARD GRID ── */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.full{grid-column:1/-1}
+
+/* ── WORK CARD ── */
+.wcard{background:#fff;border-radius:16px;box-shadow:var(--shadow);overflow:hidden;transition:transform .25s,box-shadow .25s;opacity:0;transform:translateY(20px)}
+.wcard.visible{opacity:1;transform:translateY(0);transition:opacity .5s ease,transform .5s ease,box-shadow .25s}
+.wcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-h)}
+.wcard-head{padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid var(--egat-border);cursor:pointer;user-select:none;transition:background .2s}
+.wcard-head:hover{background:var(--egat-gray)}
+.w-title-area{display:flex;align-items:flex-start;gap:10px;flex:1}
+.sec-num{background:var(--egat-navy);color:#fff;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.wtitle{font-size:14px;font-weight:700;color:#1a2744;line-height:1.4}
+.wsub{font-size:11px;color:#64748b;margin-top:2px}
+.sbadge{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.sbadge::before{content:'●';font-size:7px}
+.s-done{background:#d1fae5;color:#065f46}.s-prog{background:#fef3c7;color:#92400e}
+.s-pend{background:#ede9fe;color:#4c1d95}.s-alert{background:#fee2e2;color:#991b1b}
+.s-renew{background:#dbeafe;color:#1e40af}
+.chev{color:#94a3b8;font-size:14px;transition:transform .3s;flex-shrink:0;margin-top:3px}
+.wcard.open .chev{transform:rotate(180deg)}
+
+/* ── CARD BODY ── */
+.wcard-body{display:none;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.wcard.open .wcard-body{display:block}
+
+/* ── ILLUSTRATION STRIP ── */
+.illus-strip{width:100%;overflow:hidden;border-bottom:1px solid var(--egat-border)}
+.illus-strip svg{display:block;width:100%}
+
+/* ── MINI STATS ── */
+.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px;border-bottom:1px solid var(--egat-border)}
+.mini-stat{text-align:center;background:var(--egat-gray);border-radius:10px;padding:10px}
+.mini-val{font-size:22px;font-weight:800;color:var(--egat-navy);line-height:1}
+.mini-lbl{font-size:11px;color:#64748b;margin-top:3px}
+
+/* ── TIMELINE ── */
+.timeline{padding:14px 16px;position:relative}
+.timeline::before{content:'';position:absolute;left:34px;top:18px;bottom:18px;width:2px;background:linear-gradient(to bottom,var(--egat-blue),var(--egat-border));border-radius:2px}
+.tl-item{display:flex;gap:14px;margin-bottom:14px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;position:relative;z-index:1;font-weight:700;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.13)}
+.td-done{background:var(--done);color:#fff}.td-prog{background:var(--progress);color:#fff;animation:tdPulse 2s infinite}
+.td-alert{background:var(--alert);color:#fff}.td-info{background:var(--egat-blue);color:#fff}
+@keyframes tdPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}60%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}
+.tl-content{flex:1;padding-top:4px}
+.tl-date{font-size:11px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase}
+.tl-text{font-size:13px;color:#334155;line-height:1.6}
+.tl-text strong{color:var(--egat-navy);font-weight:700}
+
+/* ── INFO BOX ── */
+.ibox{margin:6px 16px 14px;padding:10px 14px;border-radius:10px;font-size:12.5px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.ibox-icon{font-size:18px;flex-shrink:0}
+.ibox.blue{background:var(--egat-light-blue);border-left:4px solid var(--egat-blue);color:#1e40af}
+.ibox.green{background:#f0fdf4;border-left:4px solid var(--done);color:#065f46}
+.ibox.amber{background:#fffbeb;border-left:4px solid var(--progress);color:#92400e}
+.ibox.red{background:#fef2f2;border-left:4px solid var(--alert);color:#991b1b}
+
+/* ── COURT BANNER ── */
+.court-banner{background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;border-radius:10px;padding:12px 14px;margin:8px 16px 14px;display:flex;gap:10px}
+.cb-icon{font-size:26px;flex-shrink:0}
+.cb-text h4{font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:3px}
+.cb-text p{font-size:12px;color:#991b1b;line-height:1.5}
+
+/* ── TABLE ── */
+.req-table{width:100%;border-collapse:collapse;font-size:13px}
+.req-table th{background:var(--egat-navy);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:12px}
+.req-table td{padding:9px 12px;border-bottom:1px solid var(--egat-border);color:#334155;line-height:1.5}
+.req-table tr:last-child td{border-bottom:none}
+.req-table tr:hover td{background:var(--egat-light-blue)}
+.req-table tr:nth-child(even) td{background:#fafbff}
+.req-table tr:nth-child(even):hover td{background:var(--egat-light-blue)}
+
+/* ── FOOTER ── */
+.dash-footer{background:#fff;border-radius:14px;padding:16px 22px;box-shadow:var(--shadow);margin-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.legend{display:flex;align-items:center;gap:6px;font-size:12px}
+.ldot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+
+/* ── UPDATE PANEL ── */
+.upd-panel{border-top:1px solid var(--egat-border);background:#fafbff}
+.upd-toggle{display:flex;align-items:center;gap:8px;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--egat-navy);user-select:none;transition:background .2s}
+.upd-toggle:hover{background:var(--egat-gray)}
+.utcount{background:var(--egat-navy);color:#fff;border-radius:99px;font-size:10px;padding:1px 7px;margin-left:2px;min-width:18px;text-align:center;display:inline-block}
+.utcount:empty{display:none}
+.upd-body{display:none;padding:12px 16px 14px;border-top:1px solid var(--egat-border)}
+.upd-body.open{display:block;animation:slideDown .25s ease}
+.upd-log{margin-bottom:12px}
+.upd-entry{display:flex;gap:10px;margin-bottom:10px;animation:slideDown .25s ease}
+.upd-entry-date{font-size:11px;color:#64748b;font-weight:600;margin-bottom:2px}
+.upd-entry-text{font-size:13px;color:#334155;line-height:1.5}
+.upd-form{background:white;border:1.5px solid var(--egat-border);border-radius:10px;padding:12px}
+.upd-type-sel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.upd-type-btn{padding:4px 11px;border-radius:20px;border:1.5px solid var(--egat-border);background:#fff;font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;opacity:.65}
+.upd-type-btn.active{opacity:1;font-weight:600}
+.upd-type-btn.sel-done.active{background:#d1fae5;border-color:var(--done);color:#065f46}
+.upd-type-btn.sel-prog.active{background:#fef3c7;border-color:var(--progress);color:#92400e}
+.upd-type-btn.sel-alert.active{background:#fee2e2;border-color:var(--alert);color:#991b1b}
+.upd-type-btn.sel-info.active{background:#dbeafe;border-color:var(--egat-blue);color:#1e40af}
+.upd-textarea{width:100%;border:1.5px solid var(--egat-border);border-radius:8px;padding:8px 10px;font-family:'Sarabun',sans-serif;font-size:13px;resize:vertical;min-height:64px;outline:none;transition:border-color .2s;color:#1a2744}
+.upd-textarea:focus{border-color:var(--egat-blue)}
+.upd-submit{background:var(--egat-navy);color:#fff;border:none;border-radius:8px;padding:7px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+.upd-submit:hover{background:var(--egat-blue)}
+.upd-del{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:12px;padding:2px 5px;transition:color .15s;flex-shrink:0;line-height:1;border-radius:4px}
+.upd-del:hover{color:var(--alert);background:#fee2e2}
+.ud-done{background:var(--done)}.ud-prog{background:var(--progress)}.ud-alert{background:var(--alert)}.ud-info{background:var(--egat-blue)}
+
+/* ── HIDDEN ── */
+.hidden{display:none!important}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;left:0;top:0;height:100vh;width:215px;background:linear-gradient(170deg,#001f5c,#003087 55%,#0a4472);z-index:300;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.3);overflow-y:auto}
+.sb-head{padding:16px 14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-logo{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#003087;border:2px solid #FDB913;flex-shrink:0}
+.sb-brand strong{display:block;font-size:12px;font-weight:800;color:#fff;line-height:1.3}
+.sb-brand span{font-size:10px;color:rgba(255,255,255,.55)}
+.sb-section{font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:12px 14px 5px}
+.sb-link{display:flex;align-items:center;gap:9px;padding:9px 12px;color:rgba(255,255,255,.72);text-decoration:none;font-size:13px;font-weight:500;border-radius:9px;margin:2px 8px;transition:all .18s;font-family:'Sarabun',sans-serif}
+.sb-link:hover{background:rgba(255,255,255,.12);color:#fff}
+.sb-link.active{background:rgba(253,185,19,.18);color:#FDB913;font-weight:700;border-left:3px solid #FDB913;padding-left:9px}
+.sb-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sb-badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700}
+.sb-badge.red{background:rgba(239,68,68,.3);color:#fca5a5}
+.sb-badge.teal{background:rgba(14,116,144,.35);color:#67e8f9}
+.sb-divider{height:1px;background:rgba(255,255,255,.1);margin:5px 12px}
+.sb-footer{margin-top:auto;padding:12px 14px;font-size:10px;color:rgba(255,255,255,.32);line-height:1.7;border-top:1px solid rgba(255,255,255,.08)}
+.main-wrap{margin-left:215px}
+.sb-toggle{display:none;position:fixed;top:12px;left:12px;z-index:400;background:#001f5c;border:2px solid #FDB913;border-radius:8px;padding:6px 10px;color:#FDB913;font-size:16px;cursor:pointer;line-height:1}
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.card-grid{grid-template-columns:1fr}.full{grid-column:1}.chart-row{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:transform .3s}.sidebar.sb-open{transform:none}.main-wrap{margin-left:0}.sb-toggle{display:block}}
+@media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.topbar-inner{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<button class="sb-toggle" onclick="document.querySelector('.sidebar').classList.toggle('sb-open')">☰</button>
+<div class="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo">กฟผ.</div>
+    <div class="sb-brand"><strong>กฟผ. บางปะกง</strong><span>Bangpakong Power Plant</span></div>
+  </div>
+  <a class="sb-link" href="index.html"><span class="sb-icon">🏠</span>ศูนย์ติดตามงาน (Hub)</a>
+  <div class="sb-divider"></div>
+  <div class="sb-section">โครงงาน</div>
+  <a class="sb-link active" href="รายงานที่ดิน_กฟผ_Dashboard.html"><span class="sb-icon">🗂️</span>งานที่ดิน กฟผ.<span class="sb-badge red">2🚨</span></a>
+  <a class="sb-link" href="Riverfront_Dashboard.html"><span class="sb-icon">⚓</span>ซ่อม Riverfront</a>
+  <div class="sb-footer">การไฟฟ้าฝ่ายผลิต<br>โรงไฟฟ้าบางปะกง</div>
+</div>
+<div class="main-wrap">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="logo-area">
+      <div class="egat-logo">กฟผ.</div>
+      <div class="logo-text">
+        <h1>งานที่ดิน กฟผ. · โรงไฟฟ้าบางปะกง</h1>
+        <p>ฝ่ายจัดการที่ดิน · รายงานความคืบหน้า วาระที่ 7</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="date-badge">📅 ข้อมูล ณ 19 พฤษภาคม 2569</div>
+      <div class="mtg-badge">📋 วาระที่ 7</div>
+    </div>
+  </div>
+  <div class="gold-line"></div>
+</div>
+
+<div class="container">
+
+<!-- KPI -->
+<div class="kpi-grid">
+  <div class="kpi blue"><div class="kpi-icon">🗂️</div><div class="kpi-val" data-target="14">0</div><div class="kpi-label">งานทั้งหมดที่ติดตาม</div></div>
+  <div class="kpi green"><div class="kpi-icon">✅</div><div class="kpi-val" data-target="4">0</div><div class="kpi-label">แล้วเสร็จ / ต่ออายุแล้ว</div></div>
+  <div class="kpi amber"><div class="kpi-icon">⏳</div><div class="kpi-val" data-target="8">0</div><div class="kpi-label">อยู่ระหว่างดำเนินการ</div></div>
+  <div class="kpi red"><div class="kpi-icon">⚖️</div><div class="kpi-val" data-target="1">0</div><div class="kpi-label">คดีความ / ต้องติดตามด่วน</div></div>
+  <div class="kpi purple"><div class="kpi-icon">🌾</div><div class="kpi-val" data-target="24">0</div><div class="kpi-label">แปลงที่ดินที่ดำเนินการ</div></div>
+</div>
+
+<!-- FILTER -->
+<div class="filter-bar">
+  <span class="filter-label">แสดง:</span>
+  <button class="fbtn active" onclick="filterCards('all',this)">ทั้งหมด</button>
+  <button class="fbtn g" onclick="filterCards('done',this)">✅ แล้วเสร็จ</button>
+  <button class="fbtn a" onclick="filterCards('progress',this)">⏳ กำลังดำเนินการ</button>
+  <button class="fbtn r" onclick="filterCards('alert',this)">🚨 ต้องติดตาม</button>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="fbtn" onclick="toggleAll(true)">▼ ขยายทั้งหมด</button>
+    <button class="fbtn" onclick="toggleAll(false)">▲ ย่อทั้งหมด</button>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="chart-row">
+  <div class="chart-card">
+    <h3>📊 สัดส่วนสถานะงานทั้งหมด</h3>
+    <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <h3>🌾 เนื้อที่ที่ดิน (ไร่) แยกประเภท</h3>
+    <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 1 ═══ -->
+<div class="sec-head"><h2>📌 งานขอใช้และถอนสภาพที่ดิน</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- 7.1.1 -->
+  <div class="wcard" data-status="progress" id="c711">
+    <div class="wcard-head" onclick="toggle('c711')">
+      <div class="w-title-area">
+        <div class="sec-num">7.1.1</div>
+        <div><div class="wtitle">ขอใช้ที่ดินสาธารณประโยชน์</div><div class="wsub">10 แปลง · 18 ไร่ 1 งาน 6.8 ตร.ว. · โรงไฟฟ้าบางปะกง</div></div>
+      </div>
+      <span class="sbadge s-prog">กำลังดำเนินการ</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <!-- ILLUSTRATION: Public Land -->
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="180" fill="#EBF5FB"/>
+          <!-- land plots -->
+          <rect x="30" y="30" width="110" height="80" rx="6" fill="#AED6F1" stroke="#1F618D" stroke-width="2"/>
+          <rect x="155" y="30" width="90" height="80" rx="6" fill="#A9DFBF" stroke="#1E8449" stroke-width="2"/>
+          <rect x="260" y="30" width="100" height="80" rx="6" fill="#FAD7A0" stroke="#B7950B" stroke-width="2"/>
+          <rect x="375" y="30" width="85" height="80" rx="6" fill="#D7BDE2" stroke="#7D3C98" stroke-width="2"/>
+          <rect x="475" y="30" width="95" height="80" rx="6" fill="#FADBD8" stroke="#C0392B" stroke-width="2"/>
+          <rect x="585" y="30" width="80" height="80" rx="6" fill="#A9DFBF" stroke="#1E8449" stroke-width="2"/>
+          <!-- labels -->
+          <text x="85" y="73" font-family="Arial" font-size="11" fill="#1F618D" text-anchor="middle" font-weight="bold">แปลง 1</text>
+          <text x="200" y="73" font-family="Arial" font-size="11" fill="#1E8449" text-anchor="middle" font-weight="bold">แปลง 2</text>
+          <text x="310" y="73" font-family="Arial" font-size="11" fill="#B7950B" text-anchor="middle" font-weight="bold">แปลง 3</text>
+          <text x="418" y="73" font-family="Arial" font-size="11" fill="#7D3C98" text-anchor="middle" font-weight="bold">แปลง 7</text>
+          <text x="522" y="73" font-family="Arial" font-size="11" fill="#C0392B" text-anchor="middle" font-weight="bold">แปลง 8</text>
+          <text x="625" y="73" font-family="Arial" font-size="11" fill="#1E8449" text-anchor="middle" font-weight="bold">แปลง 12</text>
+          <!-- approved badge -->
+          <rect x="30" y="125" width="635" height="38" rx="8" fill="rgba(0,48,135,0.08)" stroke="#003087" stroke-width="1"/>
+          <text x="347" y="149" font-family="Arial" font-size="13" fill="#003087" text-anchor="middle" font-weight="bold">✓ ได้รับอนุญาต 10 แปลง · กรมป่าไม้อนุญาต 30 ปี (ถึง 4 ธ.ค. 2592)</text>
+          <!-- North -->
+          <polygon points="760,35 755,55 765,55" fill="#2C3E50"/>
+          <text x="762" y="66" font-family="Arial" font-size="11" fill="#2C3E50" text-anchor="middle" font-weight="bold">N</text>
+        </svg>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-stat"><div class="mini-val">10</div><div class="mini-lbl">แปลงที่ได้รับอนุญาต</div></div>
+        <div class="mini-stat"><div class="mini-val">18-1-6.8</div><div class="mini-lbl">ไร่-งาน-ตร.ว.</div></div>
+        <div class="mini-stat"><div class="mini-val">30 ปี</div><div class="mini-lbl">ระยะเวลา (กรมป่าไม้)</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">17 ต.ค. 2562</div><div class="tl-text"><strong>จ.ฉะเชิงเทรา</strong> อนุญาตใช้ที่ดินของรัฐ 10 แปลง มีกำหนด 5 ปี (สิ้นสุด 17 ต.ค. 2567)</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">4 ธ.ค. 2562</div><div class="tl-text"><strong>กรมป่าไม้</strong> อนุญาตเข้าทำประโยชน์ในเขตป่า ม.54 มีกำหนด 30 ปี (ถึง 4 ธ.ค. 2592)</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">23 ม.ค. 2567</div><div class="tl-text"><strong>อทด.</strong> ยื่นขอต่ออนุญาต — ตอบครบทุก 15 หน่วยงานแล้ว</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">ปัจจุบัน</div><div class="tl-text">4 แปลง อยู่ระหว่าง อทด. ทำเรื่องขอใช้ · คณะกรรมการ ม.9 นัดประชุม · ยังไม่ต้องเสียค่าธรรมเนียม</div></div></div>
+      </div>
+      <div class="ibox green"><div class="ibox-icon">✅</div><div><strong>งานแล้วเสร็จ:</strong> ติดตั้งป้ายและเสาหลักเขต ที่สาธารณะ 10 แปลง และป่าชายเลน 4 แปลง</div></div>
+    </div>
+  </div>
+
+  <!-- 7.1.2 -->
+  <div class="wcard" data-status="progress" id="c712">
+    <div class="wcard-head" onclick="toggle('c712')">
+      <div class="w-title-area">
+        <div class="sec-num">7.1.2</div>
+        <div><div class="wtitle">ขอถอนสภาพที่ดินสาธารณประโยชน์</div><div class="wsub">14 แปลง · 22 ไร่ 2 งาน 37.5 ตร.ว.</div></div>
+      </div>
+      <span class="sbadge s-prog">กำลังดำเนินการ</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="150" fill="#FEF9E7"/>
+          <!-- document icon -->
+          <rect x="60" y="20" width="90" height="110" rx="6" fill="white" stroke="#D4AC0D" stroke-width="2"/>
+          <rect x="72" y="38" width="66" height="6" rx="2" fill="#FAD7A0"/>
+          <rect x="72" y="52" width="50" height="6" rx="2" fill="#FAD7A0"/>
+          <rect x="72" y="66" width="58" height="6" rx="2" fill="#FAD7A0"/>
+          <rect x="72" y="80" width="44" height="6" rx="2" fill="#FAD7A0"/>
+          <text x="105" y="115" font-family="Arial" font-size="10" fill="#B7950B" text-anchor="middle">คำร้อง</text>
+          <!-- arrow -->
+          <polygon points="175,75 195,65 195,85" fill="#B7950B"/>
+          <line x1="155" y1="75" x2="175" y2="75" stroke="#B7950B" stroke-width="2.5"/>
+          <!-- 14 plots visual -->
+          <g transform="translate(210,20)">
+            <rect x="0" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="58" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="116" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="174" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="232" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="290" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="348" y="0" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="0" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="58" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="116" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="174" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="232" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="290" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <rect x="348" y="48" width="50" height="40" rx="4" fill="#FADBD8" stroke="#C0392B" stroke-width="1.5"/>
+            <text x="199" y="115" font-family="Arial" font-size="13" fill="#922B21" text-anchor="middle" font-weight="bold">14 แปลง · รวม 22 ไร่ 2 งาน 37.5 ตร.ว.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">12 ม.ค. 2566</div><div class="tl-text"><strong>อทด.</strong> ส่งข้อมูลทั้งหมดให้ผู้ว่าราชการจังหวัดฉะเชิงเทราแล้ว</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">ปัจจุบัน</div><div class="tl-text">อยู่ระหว่างรอการพิจารณาจากผู้ว่าราชการจังหวัดฉะเชิงเทรา</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 2 ═══ -->
+<div class="sec-head"><h2>⚓ งานท่าเทียบเรือและสัญญาเช่า</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- 7.2 -->
+  <div class="wcard" data-status="progress" id="c72">
+    <div class="wcard-head" onclick="toggle('c72')">
+      <div class="w-title-area">
+        <div class="sec-num">7.2</div>
+        <div><div class="wtitle">ตรวจสอบโครงสร้างท่าเทียบเรือรับน้ำมัน</div><div class="wsub">ต่อใบอนุญาตประจำปี 2569 · 3 ท่า · กรมเจ้าท่า</div></div>
+      </div>
+      <span class="sbadge s-prog">รออนุมัติ</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <!-- Pier Illustration -->
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 190" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1B6CA8"/><stop offset="100%" stop-color="#0D2C44"/></linearGradient>
+            <linearGradient id="skyP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#AED6F1"/><stop offset="100%" stop-color="#D6EAF8"/></linearGradient>
+          </defs>
+          <rect width="800" height="190" fill="url(#skyP)"/>
+          <rect y="115" width="800" height="75" fill="url(#sea)"/>
+          <!-- Water shimmer -->
+          <ellipse cx="200" cy="135" rx="100" ry="8" fill="rgba(255,255,255,0.07)"/>
+          <ellipse cx="600" cy="148" rx="80" ry="6" fill="rgba(255,255,255,0.07)"/>
+          <!-- Dock platform -->
+          <rect x="80" y="88" width="640" height="32" fill="#7D6608" rx="3"/>
+          <rect x="80" y="85" width="640" height="9" fill="#A0850A" rx="2"/>
+          <!-- Deck planks -->
+          <line x1="160" y1="85" x2="160" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <line x1="240" y1="85" x2="240" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <line x1="320" y1="85" x2="320" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <line x1="400" y1="85" x2="400" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <line x1="480" y1="85" x2="480" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <line x1="560" y1="85" x2="560" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <line x1="640" y1="85" x2="640" y2="120" stroke="#5D4E08" stroke-width="1.5"/>
+          <!-- Legs -->
+          <rect x="108" y="120" width="12" height="55" fill="#5D6D7E" rx="2"/>
+          <rect x="200" y="120" width="12" height="55" fill="#5D6D7E" rx="2"/>
+          <rect x="308" y="120" width="12" height="55" fill="#5D6D7E" rx="2"/>
+          <rect x="400" y="120" width="12" height="55" fill="#5D6D7E" rx="2"/>
+          <rect x="508" y="120" width="12" height="55" fill="#5D6D7E" rx="2"/>
+          <rect x="600" y="120" width="12" height="55" fill="#5D6D7E" rx="2"/>
+          <!-- Bollards -->
+          <circle cx="114" cy="88" r="7" fill="#2C3E50"/>
+          <circle cx="210" cy="88" r="7" fill="#2C3E50"/>
+          <circle cx="314" cy="88" r="7" fill="#2C3E50"/>
+          <circle cx="410" cy="88" r="7" fill="#2C3E50"/>
+          <circle cx="514" cy="88" r="7" fill="#2C3E50"/>
+          <circle cx="606" cy="88" r="7" fill="#2C3E50"/>
+          <!-- Safety rail red -->
+          <line x1="90" y1="78" x2="710" y2="78" stroke="#E74C3C" stroke-width="3"/>
+          <!-- Control room -->
+          <rect x="330" y="42" width="140" height="48" fill="#2471A3" rx="5"/>
+          <rect x="325" y="37" width="150" height="11" fill="#1A5276" rx="3"/>
+          <rect x="346" y="54" width="22" height="16" fill="#AED6F1" rx="2"/>
+          <rect x="378" y="54" width="22" height="16" fill="#AED6F1" rx="2"/>
+          <rect x="410" y="54" width="22" height="16" fill="#AED6F1" rx="2"/>
+          <rect x="378" y="72" width="22" height="18" fill="#1A5276" rx="2"/>
+          <!-- Pier labels -->
+          <rect x="120" y="10" width="68" height="20" rx="4" fill="rgba(0,48,135,0.8)"/>
+          <text x="154" y="24" font-family="Arial" font-size="10" fill="white" text-anchor="middle" font-weight="bold">ท่า 1</text>
+          <rect x="370" y="10" width="68" height="20" rx="4" fill="rgba(0,48,135,0.8)"/>
+          <text x="404" y="24" font-family="Arial" font-size="10" fill="white" text-anchor="middle" font-weight="bold">ท่า 2</text>
+          <rect x="620" y="10" width="68" height="20" rx="4" fill="rgba(0,48,135,0.8)"/>
+          <text x="654" y="24" font-family="Arial" font-size="10" fill="white" text-anchor="middle" font-weight="bold">ท่า 3</text>
+          <!-- Gold line bottom -->
+          <rect x="0" y="183" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">10 ก.ค. 2567</div><div class="tl-text">ได้รับใบอนุญาตจากกรมเจ้าท่า (มีอายุ 1 ปี)</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">28 เม.ย. 2568</div><div class="tl-text"><strong>วุฒิวิศวกร</strong>ลงนามในรายงานตรวจสอบโครงสร้างฯ จาก อบย.</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">23 มิ.ย. 2568</div><div class="tl-text"><strong>อฟก.</strong> ได้รับหนังสือรับรองท่าเทียบเรือ 3 ท่า จากเจ้าท่า</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">9–27 มี.ค. 2569</div><div class="tl-text"><strong>อบย.</strong> เข้าดำเนินการสำรวจโครงสร้าง 3 ท่า</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">7 พ.ค. 2569</div><div class="tl-text">อบย. ส่งรายงานให้ อฟก. ตรวจสอบ — <strong>นัดวุฒิวิศวกรลงนาม 28 พ.ค. 2569</strong></div></div></div>
+      </div>
+      <div class="ibox amber"><div class="ibox-icon">⚠️</div><div><strong>ขั้นตอนถัดไป:</strong> วุฒิวิศวกรลงนามรับรองรายงาน → ส่งกรมเจ้าท่าออกใบอนุญาตประจำปี 2569</div></div>
+    </div>
+  </div>
+
+  <!-- 7.3 -->
+  <div class="wcard" data-status="done" id="c73">
+    <div class="wcard-head" onclick="toggle('c73')">
+      <div class="w-title-area">
+        <div class="sec-num">7.3</div>
+        <div><div class="wtitle">สัญญาเช่าที่ดินราชพัสดุ อ่างเก็บน้ำบางพระ</div><div class="wsub">ต่อสัญญา 2 ปี: 1 ม.ค. 2569 – 31 ธ.ค. 2570</div></div>
+      </div>
+      <span class="sbadge s-done">ต่อสัญญาแล้ว</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <!-- Reservoir Illustration -->
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 170" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="waterR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1B4F72"/><stop offset="100%" stop-color="#0D2C44"/></linearGradient>
+            <linearGradient id="skyR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#85C1E9"/><stop offset="100%" stop-color="#AED6F1"/></linearGradient>
+          </defs>
+          <rect width="800" height="170" fill="url(#skyR)"/>
+          <!-- Hills -->
+          <ellipse cx="200" cy="120" rx="200" ry="80" fill="#1E8449" opacity=".65"/>
+          <ellipse cx="600" cy="125" rx="220" ry="85" fill="#27AE60" opacity=".55"/>
+          <ellipse cx="400" cy="105" rx="250" ry="70" fill="#2ECC71" opacity=".45"/>
+          <!-- Water -->
+          <ellipse cx="400" cy="148" rx="300" ry="55" fill="url(#waterR)"/>
+          <ellipse cx="400" cy="138" rx="300" ry="38" fill="#1F618D" opacity=".6"/>
+          <ellipse cx="340" cy="128" rx="70" ry="10" fill="rgba(255,255,255,.08)"/>
+          <!-- Dam -->
+          <rect x="650" y="118" width="38" height="52" fill="#7F8C8D"/>
+          <rect x="646" y="115" width="46" height="10" fill="#5D6D7E" rx="2"/>
+          <rect x="658" y="128" width="24" height="28" fill="#2980B9" opacity=".5"/>
+          <!-- Trees left -->
+          <ellipse cx="90" cy="118" rx="28" ry="38" fill="#145A32" opacity=".8"/>
+          <rect x="83" y="140" width="14" height="22" fill="#6D4C41"/>
+          <ellipse cx="45" cy="124" rx="20" ry="28" fill="#196F3D" opacity=".8"/>
+          <rect x="38" y="138" width="12" height="18" fill="#6D4C41"/>
+          <!-- Lease badge -->
+          <rect x="240" y="10" width="320" height="44" rx="10" fill="rgba(0,48,135,0.9)"/>
+          <text x="400" y="29" font-family="Arial" font-size="13" fill="white" text-anchor="middle" font-weight="bold">อ่างเก็บน้ำบางพระ จ.ชลบุรี</text>
+          <text x="400" y="47" font-family="Arial" font-size="11" fill="#FDB913" text-anchor="middle">ต่อสัญญาแล้ว ✓ สิ้นสุด 31 ธ.ค. 2570</text>
+          <rect x="0" y="163" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">15 ก.พ. 2567</div><div class="tl-text">ได้รับสัญญาเช่าฉบับใหม่ (2 ปี: 1 ม.ค. 2567 – 31 ธ.ค. 2568)</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">24 ธ.ค. 2568</div><div class="tl-text"><strong>หธบก-ฟ.</strong> ต่อสัญญาเช่าไปอีก 2 ปี (1 ม.ค. 2569 – 31 ธ.ค. 2570)</div></div></div>
+      </div>
+      <div class="ibox green"><div class="ibox-icon">✅</div><div><strong>สถานะ:</strong> ต่อสัญญาเรียบร้อย · หบฟก-บ. ได้รับเงินโอนเข้าบัญชี กฟผ. แล้ว</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 3 ═══ -->
+<div class="sec-head"><h2>🔍 งานตรวจสอบและดูแลที่ดิน</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- 7.4.1 บุกรุก -->
+  <div class="wcard" data-status="alert" id="c741">
+    <div class="wcard-head" onclick="toggle('c741')">
+      <div class="w-title-area">
+        <div class="sec-num">7.4.1</div>
+        <div><div class="wtitle">การบุกรุกที่ดิน โรงไฟฟ้าบางปะกง</div><div class="wsub">2 กรณี — ยังไม่ได้รื้อถอน · นัดชี้แนวเขต 18 พ.ค. 2569</div></div>
+      </div>
+      <span class="sbadge s-alert">ต้องติดตามด่วน</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 160" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="160" fill="#FEF2F2"/>
+          <!-- Fence / boundary line -->
+          <line x1="40" y1="80" x2="760" y2="80" stroke="#E74C3C" stroke-width="3" stroke-dasharray="20,8"/>
+          <!-- Fence posts -->
+          <rect x="40" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="130" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="220" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="310" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="400" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="490" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="580" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="670" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <rect x="750" y="58" width="10" height="44" fill="#C0392B" rx="2"/>
+          <!-- EGAT zone (left) -->
+          <rect x="40" y="82" width="330" height="60" rx="4" fill="rgba(0,114,206,0.12)" stroke="#0072CE" stroke-width="1.5"/>
+          <text x="205" y="118" font-family="Arial" font-size="13" fill="#0072CE" text-anchor="middle" font-weight="bold">ที่ดิน กฟผ.</text>
+          <!-- Encroach zone (right) -->
+          <rect x="380" y="82" width="180" height="60" rx="4" fill="rgba(231,76,60,0.2)" stroke="#E74C3C" stroke-width="2"/>
+          <text x="470" y="112" font-family="Arial" font-size="12" fill="#C0392B" text-anchor="middle" font-weight="bold">⚠️ รุกล้ำ</text>
+          <text x="470" y="128" font-family="Arial" font-size="10" fill="#C0392B" text-anchor="middle">ยังไม่รื้อถอน</text>
+          <!-- Alert sign -->
+          <polygon points="680,20 660,55 700,55" fill="#E74C3C"/>
+          <text x="680" y="48" font-family="Arial" font-size="16" fill="white" text-anchor="middle" font-weight="bold">!</text>
+          <text x="680" y="72" font-family="Arial" font-size="10" fill="#C0392B" text-anchor="middle" font-weight="bold">ด่วน</text>
+          <!-- Label -->
+          <text x="400" y="22" font-family="Arial" font-size="13" fill="#7F1D1D" text-anchor="middle" font-weight="bold">--- แนวเขตที่ดิน กฟผ. (มีการรุกล้ำ) ---</text>
+          <rect x="0" y="153" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">12 ก.พ. 2569</div><div class="tl-text">ลงพื้นที่เจรจาผู้ใหญ่บ้าน — <strong>ลงนามบันทึกขอให้รื้อถอนภายใน 30 วัน</strong></div></div></div>
+        <div class="tl-item"><div class="tl-dot td-alert">!</div><div class="tl-content"><div class="tl-date">12 มี.ค. 2569</div><div class="tl-text">เข้าสำรวจ — <strong>ยังไม่ได้รื้อถอน</strong> · อยู่ระหว่างประสานผู้ใหญ่บ้านเจรจาต่อ</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">มี.ค. 2569</div><div class="tl-text">ตรวจพบชาวบ้านหมู่ 7 ใช้พื้นที่เผาถ่านรุกล้ำเข้าเขต กฟผ. — <strong>นัดชี้แนวเขต 18 พ.ค. 2569</strong></div></div></div>
+      </div>
+      <div class="ibox red"><div class="ibox-icon">🚨</div><div><strong>ต้องติดตามด่วน:</strong> การรื้อถอนสิ่งปลูกสร้างรุกล้ำยังไม่ดำเนินการ</div></div>
+    </div>
+  </div>
+
+  <!-- 7.4.2-3 -->
+  <div class="wcard" data-status="done" id="c742">
+    <div class="wcard-head" onclick="toggle('c742')">
+      <div class="w-title-area">
+        <div class="sec-num">7.4.2–3</div>
+        <div><div class="wtitle">รายงานตรวจสอบที่ดิน & Gas Metering</div><div class="wsub">รายงานประจำปี 2568 · พื้นที่ อปก. สถานีควบคุมก๊าซ</div></div>
+      </div>
+      <span class="sbadge s-done">แล้วเสร็จ</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <!-- Gas Metering Illustration -->
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 160" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="160" fill="#EBF5FB"/>
+          <!-- Main cylinder tank -->
+          <ellipse cx="180" cy="90" rx="65" ry="28" fill="#2E86AB"/>
+          <rect x="115" y="90" width="130" height="50" fill="#2E86AB"/>
+          <ellipse cx="180" cy="140" rx="65" ry="18" fill="#1A5276"/>
+          <ellipse cx="162" cy="76" rx="28" ry="12" fill="rgba(255,255,255,0.18)"/>
+          <!-- Horizontal pipe -->
+          <rect x="245" y="106" width="90" height="14" fill="#95A5A6" rx="3"/>
+          <!-- Pressure gauge -->
+          <circle cx="335" cy="106" r="20" fill="white" stroke="#2C3E50" stroke-width="2"/>
+          <circle cx="335" cy="106" r="13" fill="#F8F9FA" stroke="#BDC3C7" stroke-width="1"/>
+          <line x1="335" y1="106" x2="343" y2="97" stroke="#E74C3C" stroke-width="2"/>
+          <text x="335" y="130" font-family="monospace" font-size="8" fill="#555" text-anchor="middle">Bar</text>
+          <!-- Control panel -->
+          <rect x="380" y="75" width="140" height="85" fill="#2C3E50" rx="6"/>
+          <rect x="390" y="85" width="120" height="55" fill="#1A252F" rx="4"/>
+          <rect x="398" y="93" width="104" height="38" fill="#0D1B2A" rx="3"/>
+          <text x="450" y="108" font-family="monospace" font-size="11" fill="#00FF88" text-anchor="middle">GAS METER</text>
+          <text x="450" y="123" font-family="monospace" font-size="10" fill="white" text-anchor="middle">1,247.83 m³</text>
+          <circle cx="402" cy="152" r="5" fill="#E74C3C"/>
+          <circle cx="418" cy="152" r="5" fill="#F39C12"/>
+          <circle cx="434" cy="152" r="5" fill="#27AE60"/>
+          <!-- Pipe to right -->
+          <rect x="520" y="108" width="70" height="12" fill="#7F8C8D" rx="2"/>
+          <!-- Approved badge -->
+          <rect x="600" y="55" width="170" height="50" rx="8" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="685" y="77" font-family="Arial" font-size="12" fill="#065f46" text-anchor="middle" font-weight="bold">✓ รวส. อนุมัติแล้ว</text>
+          <text x="685" y="96" font-family="Arial" font-size="11" fill="#065f46" text-anchor="middle">7 สิงหาคม 2568</text>
+          <!-- Ground -->
+          <rect x="40" y="143" width="720" height="8" fill="#A9DFBF" rx="2"/>
+          <rect x="0" y="153" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">16 ก.พ. 2569</div><div class="tl-text">ตอบสำนักงานธนารักษ์ฯ — ไม่มีที่ราชพัสดุที่เลิกใช้แล้ว</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">12 มี.ค. 2569</div><div class="tl-text"><strong>รายงานตรวจสอบที่ดิน รฟก. ประจำปี 2568</strong> เสนอ อฟก. แล้วเสร็จ</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">7 ส.ค. 2568</div><div class="tl-text"><strong>รวส. อนุมัติ</strong> การขอใช้พื้นที่ อปก. เป็นสถานีควบคุม Gas Metering</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7.4.4 ผังเมือง (full width) -->
+  <div class="wcard full" data-status="progress" id="c744">
+    <div class="wcard-head" onclick="toggle('c744')">
+      <div class="w-title-area">
+        <div class="sec-num">7.4.4</div>
+        <div><div class="wtitle">ตรวจสอบการใช้ประโยชน์ที่ดิน / ผังเมือง EEC</div><div class="wsub">ขอเปลี่ยนสีผังเมืองโรงไฟฟ้าบางปะกง จากสีเขียว → สีน้ำเงิน เพื่อรองรับโรงไฟฟ้าในอนาคต</div></div>
+      </div>
+      <span class="sbadge s-prog">กำลังดำเนินการ</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="timeline" style="column-count:2;column-gap:32px">
+        <div class="tl-item" style="break-inside:avoid"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">14–21 ก.พ. 2568</div><div class="tl-text">ยื่นขอตรวจสอบการใช้ประโยชน์ที่ดินคลังน้ำมัน — ได้รับหนังสือตอบกลับ (ปัจจุบันใช้ผัง EEC ปี 2562)</div></div></div>
+        <div class="tl-item" style="break-inside:avoid"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">13 มี.ค. 2569</div><div class="tl-text">ประชุมจัดทำผังนโยบายระดับจังหวัด ที่โรงแรมซันทารา จ.ฉะเชิงเทรา</div></div></div>
+        <div class="tl-item" style="break-inside:avoid"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">9 เม.ย. 2569</div><div class="tl-text">เข้าพบรองผู้ว่าฯ ฉะเชิงเทรา — โยธาจังหวัดรับเรื่องแล้ว กรมโยธาส่วนกลางกำลังดำเนินการ</div></div></div>
+        <div class="tl-item" style="break-inside:avoid"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">19 พ.ค. 2569</div><div class="tl-text">อฟก., อกม., อทด. เข้าประชุมกับตัวแทน EEC — <strong>ยังอยู่ระหว่างดำเนินการ</strong></div></div></div>
+      </div>
+      <div class="ibox blue"><div class="ibox-icon">ℹ️</div><div>ที่ดินบางแปลงมีโฉนดใน จ.ชลบุรี → แนะนำทำหนังสือไปโยธาจังหวัดชลบุรีด้วย และจะทำหนังสือขอเปลี่ยนสีผังเมืองไปที่ EEC อีกทาง</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 4 ═══ -->
+<div class="sec-head"><h2>⚖️ คดีความและคำร้องขอใช้พื้นที่</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+
+  <!-- 7.7 คดีวันเพ็ญ -->
+  <div class="wcard" data-status="alert" id="c77">
+    <div class="wcard-head" onclick="toggle('c77')">
+      <div class="w-title-area">
+        <div class="sec-num">7.7</div>
+        <div><div class="wtitle">น.ส.วันเพ็ญฯ ฟ้อง กฟผ. ขอผ่านทาง</div><div class="wsub">ศาลตัดสินให้ กฟผ. เปิดทาง · หพญ-ห. ยื่นอุทธรณ์ 19 พ.ค. 2569</div></div>
+      </div>
+      <span class="sbadge s-alert">อุทธรณ์</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="140" fill="#FEF2F2"/>
+          <!-- Court building -->
+          <rect x="280" y="30" width="240" height="90" fill="white" stroke="#E74C3C" stroke-width="2" rx="4"/>
+          <polygon points="280,30 400,5 520,30" fill="#E74C3C"/>
+          <!-- Columns -->
+          <rect x="300" y="55" width="14" height="65" fill="#BDC3C7"/>
+          <rect x="340" y="55" width="14" height="65" fill="#BDC3C7"/>
+          <rect x="380" y="55" width="14" height="65" fill="#BDC3C7"/>
+          <rect x="420" y="55" width="14" height="65" fill="#BDC3C7"/>
+          <rect x="460" y="55" width="14" height="65" fill="#BDC3C7"/>
+          <rect x="500" y="55" width="14" height="65" fill="#BDC3C7"/>
+          <!-- Scale of justice -->
+          <line x1="400" y1="18" x2="400" y2="50" stroke="white" stroke-width="2"/>
+          <line x1="375" y1="35" x2="425" y2="35" stroke="white" stroke-width="2"/>
+          <circle cx="375" cy="42" r="6" fill="white"/>
+          <circle cx="425" cy="28" r="6" fill="white"/>
+          <!-- Result label -->
+          <rect x="90" y="40" width="165" height="55" rx="8" fill="rgba(231,76,60,0.12)" stroke="#E74C3C" stroke-width="1.5"/>
+          <text x="172" y="63" font-family="Arial" font-size="12" fill="#7F1D1D" text-anchor="middle" font-weight="bold">ผลคำพิพากษา</text>
+          <text x="172" y="80" font-family="Arial" font-size="11" fill="#991B1B" text-anchor="middle">ให้ กฟผ. เปิดทาง</text>
+          <text x="172" y="95" font-family="Arial" font-size="10" fill="#991B1B" text-anchor="middle">(23 มี.ค. 2569)</text>
+          <!-- Appeal -->
+          <rect x="545" y="40" width="165" height="55" rx="8" fill="rgba(245,158,11,0.12)" stroke="#F59E0B" stroke-width="1.5"/>
+          <text x="627" y="63" font-family="Arial" font-size="12" fill="#92400E" text-anchor="middle" font-weight="bold">ยื่นอุทธรณ์</text>
+          <text x="627" y="80" font-family="Arial" font-size="11" fill="#92400E" text-anchor="middle">19 พ.ค. 2569</text>
+          <text x="627" y="95" font-family="Arial" font-size="10" fill="#92400E" text-anchor="middle">หพญ-ห.</text>
+          <!-- Arrow -->
+          <line x1="255" y1="67" x2="275" y2="67" stroke="#2C3E50" stroke-width="2"/>
+          <polygon points="275,62 285,67 275,72" fill="#2C3E50"/>
+          <line x1="515" y1="67" x2="535" y2="67" stroke="#2C3E50" stroke-width="2"/>
+          <polygon points="535,62 545,67 535,72" fill="#2C3E50"/>
+          <rect x="0" y="133" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="court-banner">
+        <div class="cb-icon">⚖️</div>
+        <div class="cb-text"><h4>ผลคำพิพากษา (23 มี.ค. 2569)</h4><p>ศาลตัดสินให้ กฟผ. <strong>ห้ามปิดประตูกั้นช่องเปิดรั้ว</strong> · หพญ-ห. จะยื่นศาลอุทธรณ์ 19 พ.ค. 2569</p></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">5 มี.ค. 2569</div><div class="tl-text">ตรวจแผนที่แล้วเสร็จ — ศาลนัดไต่สวนสืบพยาน 5–6 มี.ค. 2569</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-alert">!</div><div class="tl-content"><div class="tl-date">23 มี.ค. 2569</div><div class="tl-text"><strong>ศาลตัดสิน:</strong> ให้ กฟผ. ห้ามปิดประตูกั้น</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">19 พ.ค. 2569</div><div class="tl-text"><strong>หพญ-ห.</strong> เข้ายื่นศาลอุทธรณ์</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7.8 สุกัญญา -->
+  <div class="wcard" data-status="progress" id="c78">
+    <div class="wcard-head" onclick="toggle('c78')">
+      <div class="w-title-area">
+        <div class="sec-num">7.8</div>
+        <div><div class="wtitle">นางสุกัญญาฯ ขอใช้ที่ดิน กฟผ. เป็นทางผ่าน</div><div class="wsub">กว้าง 5 ม. · อยู่ระหว่างจัดทำไฟล์นำเสนอ คคบท.</div></div>
+      </div>
+      <span class="sbadge s-prog">รอเสนอ คคบท.</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="150" fill="#E9F7EF"/>
+          <!-- EGAT land -->
+          <rect x="40" y="25" width="420" height="110" rx="6" fill="#AED6F1" stroke="#1F618D" stroke-width="2"/>
+          <text x="250" y="75" font-family="Arial" font-size="15" fill="#1F618D" text-anchor="middle" font-weight="bold">ที่ดิน กฟผ.</text>
+          <text x="250" y="95" font-family="Arial" font-size="11" fill="#1F618D" text-anchor="middle">(โฉนดที่ดิน 1490)</text>
+          <!-- Sukanya land -->
+          <rect x="490" y="40" width="210" height="90" rx="6" fill="#FADBD8" stroke="#C0392B" stroke-width="2"/>
+          <text x="595" y="87" font-family="Arial" font-size="13" fill="#922B21" text-anchor="middle" font-weight="bold">ที่ดินสุกัญญาฯ</text>
+          <!-- Access way (orange) -->
+          <rect x="458" y="55" width="34" height="55" fill="#F39C12" opacity=".9" stroke="#D68910" stroke-width="2"/>
+          <text x="475" y="78" font-family="Arial" font-size="9" fill="white" text-anchor="middle" font-weight="bold">ทาง</text>
+          <text x="475" y="91" font-family="Arial" font-size="9" fill="white" text-anchor="middle" font-weight="bold">5 ม.</text>
+          <!-- Double-headed arrow -->
+          <line x1="458" y1="48" x2="492" y2="48" stroke="#D68910" stroke-width="2" stroke-dasharray="4,2"/>
+          <text x="475" y="44" font-family="Arial" font-size="9" fill="#D68910" text-anchor="middle">5 เมตร</text>
+          <!-- Legend -->
+          <rect x="42" y="128" width="12" height="10" fill="#AED6F1" stroke="#1F618D" stroke-width="1"/>
+          <text x="58" y="137" font-family="Arial" font-size="10" fill="#1F618D">ที่ดิน กฟผ.</text>
+          <rect x="120" y="128" width="12" height="10" fill="#FADBD8" stroke="#C0392B" stroke-width="1"/>
+          <text x="136" y="137" font-family="Arial" font-size="10" fill="#C0392B">ที่ดินเอกชน</text>
+          <rect x="200" y="128" width="12" height="10" fill="#F39C12"/>
+          <text x="216" y="137" font-family="Arial" font-size="10" fill="#D68910">ทางเข้า-ออก</text>
+          <rect x="0" y="143" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">20 พ.ย. 2568</div><div class="tl-text">ปรับกว้างทางจาก 6 ม. เป็น <strong>5 ม.</strong> ยืนยันกับสุกัญญาฯ แล้ว</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">5 มี.ค. 2569</div><div class="tl-text">คุณสุกัญญาจัดทำหนังสือแสดงวัตถุประสงค์เพิ่มเติมแล้วเสร็จ</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">ปัจจุบัน</div><div class="tl-text"><strong>อยู่ระหว่างจัดทำไฟล์นำเสนอ คคบท.</strong></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7.9 นายดิเรก -->
+  <div class="wcard" data-status="progress" id="c79">
+    <div class="wcard-head" onclick="toggle('c79')">
+      <div class="w-title-area">
+        <div class="sec-num">7.9</div>
+        <div><div class="wtitle">นายดิเรก โพธิ์คี ขอใช้พื้นที่ชั่วคราว</div><div class="wsub">กลุ่มอาชีพเย็บจาก หมู่ 7 ต.ท่าข้าม · อยู่ระหว่างเสนอ คคบท.</div></div>
+      </div>
+      <span class="sbadge s-prog">รอเสนอ คคบท.</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="150" fill="#FEF9E7"/>
+          <!-- Community shed / building -->
+          <polygon points="200,70 380,25 560,70" fill="#D4AC0D"/>
+          <rect x="210" y="70" width="340" height="65" fill="#F0B27A"/>
+          <!-- Roof detail -->
+          <line x1="200" y1="70" x2="380" y2="25" stroke="#B7950B" stroke-width="2.5"/>
+          <line x1="560" y1="70" x2="380" y2="25" stroke="#B7950B" stroke-width="2.5"/>
+          <!-- Door -->
+          <rect x="360" y="102" width="42" height="33" fill="#884EA0" rx="3"/>
+          <!-- Windows -->
+          <rect x="230" y="82" width="40" height="30" fill="#AED6F1" rx="2" stroke="#2980B9" stroke-width="1.5"/>
+          <rect x="490" y="82" width="40" height="30" fill="#AED6F1" rx="2" stroke="#2980B9" stroke-width="1.5"/>
+          <!-- Palm leaf craft symbol -->
+          <ellipse cx="120" cy="55" rx="35" ry="14" fill="#27AE60" opacity=".7"/>
+          <ellipse cx="96" cy="48" rx="25" ry="10" fill="#2ECC71" opacity=".6" transform="rotate(-20,96,48)"/>
+          <ellipse cx="144" cy="48" rx="25" ry="10" fill="#2ECC71" opacity=".6" transform="rotate(20,144,48)"/>
+          <line x1="120" y1="66" x2="120" y2="90" stroke="#8B4513" stroke-width="2.5"/>
+          <!-- People figures -->
+          <circle cx="660" cy="65" r="14" fill="#F5CBA7"/>
+          <rect x="650" y="79" width="18" height="28" fill="#3498DB" rx="2"/>
+          <circle cx="695" cy="65" r="14" fill="#FDEBD0"/>
+          <rect x="685" y="79" width="18" height="28" fill="#E74C3C" rx="2"/>
+          <circle cx="730" cy="65" r="14" fill="#F5CBA7"/>
+          <rect x="720" y="79" width="18" height="28" fill="#27AE60" rx="2"/>
+          <text x="693" y="120" font-family="Arial" font-size="11" fill="#6D4C41" text-anchor="middle" font-weight="bold">กลุ่มอาชีพ</text>
+          <!-- Info -->
+          <text x="380" y="140" font-family="Arial" font-size="11" fill="#7D6608" text-anchor="middle">กลุ่มอาชีพเย็บจาก · หมู่ 7 ตำบลท่าข้าม · ขอใช้พื้นที่ กฟผ. ชั่วคราว</text>
+          <rect x="0" y="143" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">22 เม.ย. 2569</div><div class="tl-text"><strong>ผู้ใหญ่บ้านหมู่ 7</strong> ทำหนังสือขอใช้พื้นที่ กฟผ. ชั่วคราวแล้ว</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">ปัจจุบัน</div><div class="tl-text"><strong>อยู่ระหว่างจัดทำไฟล์นำเสนอ คคบท.</strong></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7.10 สำเนา -->
+  <div class="wcard" data-status="progress" id="c710">
+    <div class="wcard-head" onclick="toggle('c710')">
+      <div class="w-title-area">
+        <div class="sec-num">7.10</div>
+        <div><div class="wtitle">นางสำเนา แซ่อึ้ง ขอปักเสาพาดสายไฟ</div><div class="wsub">เพื่อขอติดตั้งมิเตอร์ไฟ กฟภ. ในที่ดินตนเอง · รอเสนอ คคบท.</div></div>
+      </div>
+      <span class="sbadge s-prog">รอเสนอ คคบท.</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skyE" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#85C1E9"/><stop offset="100%" stop-color="#AED6F1"/></linearGradient>
+          </defs>
+          <rect width="800" height="150" fill="url(#skyE)"/>
+          <!-- Ground -->
+          <rect y="115" width="800" height="35" fill="#A9DFBF"/>
+          <rect y="113" width="800" height="6" fill="#82E0AA"/>
+          <!-- Main pole center -->
+          <rect x="388" y="20" width="24" height="95" fill="#7F8C8D" rx="3"/>
+          <!-- Crossarms -->
+          <rect x="308" y="38" width="184" height="10" fill="#5D6D7E" rx="2"/>
+          <rect x="328" y="65" width="144" height="8" fill="#5D6D7E" rx="2"/>
+          <!-- Insulators -->
+          <circle cx="314" cy="43" r="7" fill="#E74C3C"/>
+          <circle cx="486" cy="43" r="7" fill="#E74C3C"/>
+          <circle cx="400" cy="43" r="7" fill="#E74C3C"/>
+          <circle cx="334" cy="69" r="6" fill="#E74C3C"/>
+          <circle cx="466" cy="69" r="6" fill="#E74C3C"/>
+          <!-- Wires -->
+          <path d="M314,43 Q400,55 486,43" fill="none" stroke="#2C3E50" stroke-width="2"/>
+          <path d="M314,43 Q220,52 120,60" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+          <path d="M486,43 Q580,52 680,58" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+          <path d="M334,69 Q400,80 466,69" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+          <!-- Side pole left -->
+          <rect x="115" y="42" width="16" height="75" fill="#95A5A6" rx="2"/>
+          <rect x="88" y="55" width="70" height="7" fill="#7F8C8D" rx="2"/>
+          <!-- Side pole right -->
+          <rect x="670" y="44" width="16" height="73" fill="#95A5A6" rx="2"/>
+          <rect x="644" y="56" width="70" height="7" fill="#7F8C8D" rx="2"/>
+          <!-- Meter box -->
+          <rect x="30" y="75" width="68" height="48" fill="#2C3E50" rx="5"/>
+          <rect x="38" y="83" width="52" height="30" fill="#1A252F" rx="3"/>
+          <text x="64" y="95" font-family="monospace" font-size="8" fill="#00FF88" text-anchor="middle">kWh</text>
+          <text x="64" y="107" font-family="monospace" font-size="8" fill="white" text-anchor="middle">0048.5</text>
+          <!-- PEA circle -->
+          <circle cx="64" cy="140" r="15" fill="#D00000"/>
+          <text x="64" y="145" font-family="Arial" font-size="9" fill="white" text-anchor="middle" font-weight="bold">กฟภ.</text>
+          <!-- Trees -->
+          <ellipse cx="720" cy="100" rx="28" ry="35" fill="#27AE60" opacity=".7"/>
+          <rect x="713" y="110" width="14" height="20" fill="#6D4C41"/>
+          <rect x="0" y="143" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">9 ต.ค. 2568</div><div class="tl-text">นัดหมายผู้ขอใช้ — กำหนดจุดปักเสาใหม่ (จุดเดิมอยู่ในที่ดินข้างเคียง)</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-done">✓</div><div class="tl-content"><div class="tl-date">9 มี.ค. 2569</div><div class="tl-text">อทด. ทำแผนที่ใช้ทางเพิ่มเติมแล้วเสร็จ</div></div></div>
+        <div class="tl-item"><div class="tl-dot td-prog">⏳</div><div class="tl-content"><div class="tl-date">ปัจจุบัน</div><div class="tl-text"><strong>อยู่ระหว่างจัดทำไฟล์นำเสนอ คคบท.</strong></div></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ SECTION 5 ═══ -->
+<div class="sec-head"><h2>🏗️ บริษัทภายนอกและงานเชื่อมทาง</h2><div class="sec-line"></div></div>
+<div class="card-grid">
+  <div class="wcard full" data-status="progress" id="c_others">
+    <div class="wcard-head" onclick="toggle('c_others')">
+      <div class="w-title-area">
+        <div class="sec-num">7.11–7.14</div>
+        <div><div class="wtitle">งานบริษัทภายนอก: ขอซ่อมถนน / เชื่อมทาง / ขุดตรวจสอบท่อก๊าซ</div><div class="wsub">บ.ไทยเมทัล · บ.พานทองกลการ · ขอเชื่อมทาง 3 ราย · ปตท.</div></div>
+      </div>
+      <span class="sbadge s-prog">บางส่วนแล้วเสร็จ</span><span class="chev">▼</span>
+    </div>
+    <div class="wcard-body">
+      <!-- Road/Construction illustration -->
+      <div class="illus-strip">
+        <svg viewBox="0 0 800 130" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="130" fill="#F2F3F4"/>
+          <!-- Road -->
+          <rect x="0" y="55" width="800" height="45" fill="#5D6D7E"/>
+          <!-- Lane markings -->
+          <line x1="0" y1="77" x2="800" y2="77" stroke="white" stroke-width="2" stroke-dasharray="30,20"/>
+          <!-- Power plant entrance gate -->
+          <rect x="340" y="20" width="20" height="80" fill="#2C3E50" rx="2"/>
+          <rect x="440" y="20" width="20" height="80" fill="#2C3E50" rx="2"/>
+          <rect x="340" y="18" width="120" height="10" fill="#FDB913" rx="2"/>
+          <text x="400" y="12" font-family="Arial" font-size="10" fill="#003087" text-anchor="middle" font-weight="bold">ทางเข้าโรงไฟฟ้าบางปะกง</text>
+          <!-- Truck left -->
+          <rect x="60" y="58" width="90" height="35" fill="#3498DB" rx="4"/>
+          <rect x="60" y="58" width="32" height="35" fill="#2980B9" rx="4"/>
+          <circle cx="78" cy="95" r="9" fill="#2C3E50"/>
+          <circle cx="130" cy="95" r="9" fill="#2C3E50"/>
+          <rect x="65" y="62" width="22" height="15" fill="#AED6F1" rx="2"/>
+          <!-- PTT truck right -->
+          <rect x="650" y="58" width="100" height="35" fill="#27AE60" rx="4"/>
+          <rect x="650" y="58" width="32" height="35" fill="#1E8449" rx="4"/>
+          <circle cx="668" cy="95" r="9" fill="#2C3E50"/>
+          <circle cx="728" cy="95" r="9" fill="#2C3E50"/>
+          <text x="700" y="112" font-family="Arial" font-size="9" fill="#1E8449" text-anchor="middle" font-weight="bold">ปตท.</text>
+          <!-- Construction cone -->
+          <polygon points="215,55 225,100 205,100" fill="#E74C3C"/>
+          <rect x="200" y="98" width="30" height="5" fill="#C0392B"/>
+          <polygon points="245,55 255,100 235,100" fill="#E74C3C"/>
+          <rect x="230" y="98" width="30" height="5" fill="#C0392B"/>
+          <rect x="0" y="123" width="800" height="7" fill="#FDB913"/>
+        </svg>
+      </div>
+      <table class="req-table">
+        <thead><tr>
+          <th style="width:55px">วาระ</th>
+          <th>เรื่อง</th>
+          <th>ผู้ขอ</th>
+          <th>ความคืบหน้าล่าสุด</th>
+          <th style="width:140px">สถานะ</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><strong>7.11</strong></td><td>ขออนุญาตซ่อมถนนเชื่อมทางเข้าโรงงาน</td><td>บ.ไทยเมทัลโพรเซสซิ่ง จำกัด</td><td>รับหนังสืออนุญาตแล้ว 13 มี.ค. 2568</td><td><span class="sbadge s-done">✅ แล้วเสร็จ</span></td></tr>
+          <tr><td><strong>7.12</strong></td><td>ขออนุญาตซ่อมถนนเชื่อมทางเข้าโรงงาน</td><td>บ.พานทองกลการ จำกัด</td><td>รับหนังสืออนุญาตแล้ว 2 พ.ค. 2568</td><td><span class="sbadge s-done">✅ แล้วเสร็จ</span></td></tr>
+          <tr><td><strong>7.13</strong></td><td>ขอเชื่อมทางบริเวณปากทางเข้า</td><td>3 ราย (คุณยุทธนา, คุณอรอุมา, อีก 1 ราย)</td><td>ผู้ขอจัดทำแบบรายละเอียดบ่อ คสล. เพิ่มเติม — อยู่ระหว่างดำเนินการ</td><td><span class="sbadge s-prog">⏳ กำลังดำเนินการ</span></td></tr>
+          <tr><td><strong>7.14</strong></td><td>ขออนุญาตขุดตรวจสอบและซ่อมท่อก๊าซใต้ดิน</td><td>บ.ปตท. จำกัด (มหาชน)</td><td>กฟผ. ออกหนังสืออนุญาต 6 พ.ค. 2569 — รอ ปตท. รับหนังสือ (เริ่ม มิ.ย. 2569)</td><td><span class="sbadge s-prog">⏳ รอรับหนังสือ</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="dash-footer">
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div class="legend"><div class="ldot" style="background:var(--done)"></div>แล้วเสร็จ</div>
+    <div class="legend"><div class="ldot" style="background:var(--progress)"></div>กำลังดำเนินการ</div>
+    <div class="legend"><div class="ldot" style="background:var(--alert)"></div>ต้องติดตาม / คดีความ</div>
+  </div>
+  <div style="font-size:11px;color:#94a3b8">การไฟฟ้าฝ่ายผลิตแห่งประเทศไทย · โรงไฟฟ้าบางปะกง · 19 พ.ค. 2569</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ── COUNTER ANIMATION ──
+function animateCounter(el) {
+  const target = +el.dataset.target;
+  const dur = 1200;
+  const start = performance.now();
+  const tick = (now) => {
+    const p = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(ease * target);
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// ── SCROLL REVEAL ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.wcard').forEach((c, i) => {
+  c.style.transitionDelay = (i % 4) * 0.06 + 's';
+  observer.observe(c);
+});
+
+// Trigger KPI counters on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.kpi-val[data-target]').forEach(animateCounter);
+  }, 300);
+});
+
+// ── TOGGLE CARD ──
+function toggle(id) {
+  const c = document.getElementById(id);
+  c.classList.toggle('open');
+}
+
+// ── TOGGLE ALL ──
+function toggleAll(open) {
+  document.querySelectorAll('.wcard:not(.hidden)').forEach(c => {
+    open ? c.classList.add('open') : c.classList.remove('open');
+  });
+}
+
+// ── FILTER ──
+function filterCards(status, btn) {
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.wcard').forEach(c => {
+    if (status === 'all' || c.dataset.status === status) {
+      c.classList.remove('hidden');
+    } else {
+      c.classList.add('hidden');
+      c.classList.remove('open');
+    }
+  });
+}
+
+// ── AUTO-OPEN ALERT CARDS ──
+setTimeout(() => {
+  ['c741','c77'].forEach(id => document.getElementById(id)?.classList.add('open'));
+}, 800);
+
+// ══════════════════════════════════════════
+// ── UPDATE PANEL (localStorage) ──
+// ══════════════════════════════════════════
+const UPD_KEY = 'egat_land_upd_v1';
+
+function loadUpd() {
+  try { return JSON.parse(localStorage.getItem(UPD_KEY)) || {}; } catch { return {}; }
+}
+function saveUpd(d) { localStorage.setItem(UPD_KEY, JSON.stringify(d)); }
+
+const TC = {
+  done:  { cls: 'ud-done',  icon: '✓' },
+  prog:  { cls: 'ud-prog',  icon: '⏳' },
+  alert: { cls: 'ud-alert', icon: '!' },
+  info:  { cls: 'ud-info',  icon: 'ℹ' },
+};
+
+function thDate(iso) {
+  const d = new Date(iso);
+  const m = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} น.`;
+}
+
+function renderUpd(id) {
+  const d = loadUpd();
+  const list = d[id] || [];
+  const log = document.querySelector(`#${id} .upd-log`);
+  const cnt = document.querySelector(`#${id} .utcount`);
+  if (!log) return;
+  log.innerHTML = list.length === 0
+    ? '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:8px 0">— ยังไม่มีการอัปเดต —</div>'
+    : list.map((e, i) => {
+        const t = TC[e.type] || TC.info;
+        const safeText = e.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<div class="upd-entry">
+          <div class="tl-dot ${t.cls}" style="width:26px;height:26px;font-size:11px;flex-shrink:0;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.12)">${t.icon}</div>
+          <div style="flex:1">
+            <div class="upd-entry-date">${thDate(e.ts)}</div>
+            <div class="upd-entry-text">${safeText}</div>
+          </div>
+          <button class="upd-del" onclick="delUpd('${id}',${i})" title="ลบรายการนี้">✕</button>
+        </div>`;
+      }).join('');
+  if (cnt) cnt.textContent = list.length > 0 ? list.length : '';
+}
+
+function delUpd(id, i) {
+  if (!confirm('ลบรายการนี้?')) return;
+  const d = loadUpd();
+  if (!d[id]) return;
+  d[id].splice(i, 1);
+  saveUpd(d);
+  renderUpd(id);
+}
+
+function submitUpd(id) {
+  const ta = document.getElementById(`upta-${id}`);
+  const ab = document.querySelector(`#upf-${id} .upd-type-btn.active`);
+  const txt = ta.value.trim();
+  if (!txt) {
+    ta.focus();
+    ta.style.borderColor = 'var(--alert)';
+    setTimeout(() => ta.style.borderColor = '', 1200);
+    return;
+  }
+  const type = ab ? ab.dataset.type : 'info';
+  const d = loadUpd();
+  if (!d[id]) d[id] = [];
+  d[id].unshift({ ts: new Date().toISOString(), text: txt, type });
+  saveUpd(d);
+  ta.value = '';
+  renderUpd(id);
+  // Flash confirmation
+  const btn = document.querySelector(`#upf-${id} .upd-submit`);
+  const orig = btn.textContent;
+  btn.textContent = '✅ บันทึกแล้ว!';
+  btn.style.background = 'var(--done)';
+  setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
+}
+
+function toggleUpd(id) {
+  document.getElementById(`upb-${id}`).classList.toggle('open');
+}
+
+function selType(id, btn) {
+  document.querySelectorAll(`#upf-${id} .upd-type-btn`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Inject update panel into every card
+document.querySelectorAll('.wcard').forEach(card => {
+  const id = card.id;
+  if (!id) return;
+  const body = card.querySelector('.wcard-body');
+  if (!body) return;
+  const p = document.createElement('div');
+  p.className = 'upd-panel';
+  p.innerHTML = `
+    <div class="upd-toggle" onclick="toggleUpd('${id}')">
+      📝 บันทึกอัปเดต <span class="utcount"></span>
+      <span style="margin-left:auto;font-size:11px;color:#94a3b8">▾</span>
+    </div>
+    <div class="upd-body" id="upb-${id}">
+      <div class="upd-log"></div>
+      <div class="upd-form" id="upf-${id}">
+        <div class="upd-type-sel">
+          <button class="upd-type-btn sel-done active" data-type="done" onclick="selType('${id}',this)">✓ เสร็จแล้ว</button>
+          <button class="upd-type-btn sel-prog"        data-type="prog"  onclick="selType('${id}',this)">⏳ กำลังทำ</button>
+          <button class="upd-type-btn sel-alert"       data-type="alert" onclick="selType('${id}',this)">🚨 ด่วน</button>
+          <button class="upd-type-btn sel-info"        data-type="info"  onclick="selType('${id}',this)">ℹ️ ข้อมูล</button>
+        </div>
+        <textarea class="upd-textarea" id="upta-${id}" placeholder="พิมพ์ข้อมูลอัปเดต เช่น ประชุมวันนี้ได้ผลสรุปว่า..." rows="3"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <span style="font-size:11px;color:#94a3b8">🔒 บันทึกไว้บนเครื่องนี้</span>
+          <button class="upd-submit" onclick="submitUpd('${id}')">💾 บันทึกอัปเดต</button>
+        </div>
+      </div>
+    </div>`;
+  body.appendChild(p);
+  renderUpd(id);
+});
+
+// ── DONUT CHART ──
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['แล้วเสร็จ', 'กำลังดำเนินการ', 'คดีความ/ต้องติดตาม'],
+    datasets: [{
+      data: [4, 8, 2],
+      backgroundColor: ['#10b981','#f59e0b','#ef4444'],
+      borderWidth: 3, borderColor: '#fff',
+      hoverOffset: 10
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { position: 'right', labels: { font: { family: 'Sarabun', size: 12 }, padding: 14 } }
+    },
+    animation: { animateRotate: true, duration: 1200 }
+  }
+});
+
+// ── BAR CHART ──
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: ['ที่ดินเดิม','ซื้อใหม่\n(บ่อน้ำ)','ซื้อใหม่\n(รฟ.อนาคต)','ป่าชายเลน\nอพ.สธ.','เทศบาล\nขอใช้'],
+    datasets: [{
+      label: 'เนื้อที่ (ไร่)',
+      data: [1007.5, 78.6, 277.9, 23.5, 8.2],
+      backgroundColor: ['#003087','#0072CE','#FDB913','#10b981','#f59e0b'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} ไร่` } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Sarabun', size: 11 } } },
+      y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Sarabun', size: 11 } } }
+    },
+    animation: { duration: 1400, easing: 'easeOutQuart' }
+  }
+});
+</script>
+</div><!-- /main-wrap -->
+</body>
+</html>
